@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --navy: #0a1a3f;
+  --navy-deep: #06122e;
+  --gold: #c8a24b;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--navy-deep);
+  color: #f7f4ed;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Thin gold scrollbar */
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { background: #06122e; }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(#a8842f, #c8a24b);
+  border-radius: 8px;
+}
+
+@layer components {
+  .container-luxe {
+    @apply mx-auto w-full max-w-7xl px-6 md:px-10;
+  }
+  .gold-text {
+    background: linear-gradient(92deg, #e4c677, #c8a24b 50%, #a8842f);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .btn-gold {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-gold px-7 py-3.5
+           font-sans text-sm font-semibold tracking-wide text-navy-900 transition-all
+           duration-300 hover:bg-gold-light hover:shadow-gold;
+  }
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-gold/40
+           px-7 py-3.5 font-sans text-sm font-semibold tracking-wide text-cream
+           transition-all duration-300 hover:border-gold hover:bg-gold/10;
+  }
+  .card-luxe {
+    @apply rounded-2xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-sm
+           transition-all duration-500;
+  }
+  .eyebrow {
+    @apply font-sans text-xs font-semibold uppercase tracking-[0.3em] text-gold;
+  }
+}
+
+/* Subtle architectural grid texture */
+.grid-texture {
+  background-image:
+    linear-gradient(rgba(200,162,75,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(200,162,75,0.04) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+.gold-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(200,162,75,0.6), transparent);
+}
+
+/* reveal-on-scroll base */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.8s cubic-bezier(0.16,1,0.3,1), transform 0.8s cubic-bezier(0.16,1,0.3,1);
+}
+.reveal.in {
+  opacity: 1;
+  transform: translateY(0);
+}
