@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, UserPlus, Share2, CheckCircle2, Wallet } from "lucide-react";
 import PageHero from "@/components/PageHero";
@@ -8,9 +8,9 @@ import PainterSignup from "@/components/PainterSignup";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Painter Referral Portal — Refer & Earn",
+  title: "Painter Referral Portal â€” Refer & Earn",
   description:
-    "Join the SAWANGA painter network. Refer clients, track approvals, and earn a percentage of every referred sale — redeemable via M-Pesa, bank or store credit.",
+    "Join the SAWANGA painter network. Refer clients, track approvals, and earn a percentage of every referred sale â€” redeemable via M-Pesa, bank or store credit.",
 };
 
 const STEPS = [
@@ -27,7 +27,8 @@ export default function PainterPortalPage() {
         eyebrow="Painter Referral Portal"
         title="Refer clients."
         highlight="Earn real rewards."
-        subtitle="The SAWANGA painter network rewards you for the business you bring. Earn a percentage of every referred sale — tracked transparently, paid reliably."
+        subtitle="The SAWANGA painter network rewards you for the business you bring. Earn a percentage of every referred sale â€” tracked transparently, paid reliably."
+        bgImage="/images/paint-application.jpg"
       />
 
       <section className="pb-16">

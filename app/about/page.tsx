@@ -1,4 +1,5 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import PageHero from "@/components/PageHero";
@@ -7,7 +8,7 @@ import Reveal from "@/components/Reveal";
 import { WHY_PARTNER } from "@/lib/data";
 
 export const metadata: Metadata = {
-  title: "About Us — Finishes That Build Trust",
+  title: "About Us â€” Finishes That Build Trust",
   description:
     "SAWANGA Investment Limited is a premium building finishes and interior solutions partner in Kenya, serving developers, contractors, institutions and homeowners.",
 };
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
 const VALUES = [
   {
     title: "Quality First",
-    desc: "We stock only tested products from trusted brands — because a finish is only as good as what's behind it.",
+    desc: "We stock only tested products from trusted brands â€” because a finish is only as good as what's behind it.",
     icon: "BadgeCheck",
   },
   {
@@ -25,7 +26,7 @@ const VALUES = [
   },
   {
     title: "Genuine Partnership",
-    desc: "Flexible credit, fair pricing and technical advice — we succeed when your project succeeds.",
+    desc: "Flexible credit, fair pricing and technical advice â€” we succeed when your project succeeds.",
     icon: "Handshake",
   },
 ];
@@ -37,7 +38,8 @@ export default function AboutPage() {
         eyebrow="About SAWANGA"
         title="Finishes that"
         highlight="build trust."
-        subtitle="We supply the premium finishing products that turn structures into spaces — and we back every order with reliable supply and expert support."
+        subtitle="We supply the premium finishing products that turn structures into spaces â€” and we back every order with reliable supply and expert support."
+        bgImage="/images/kitchen-dark-luxury.jpg"
       />
 
       <section className="py-16">
@@ -54,7 +56,7 @@ export default function AboutPage() {
                 </p>
                 <p>
                   From paints and putty to tiles, gypsum, granite and sanitaryware, we bring
-                  together a complete finishing range under one trusted partner — with the
+                  together a complete finishing range under one trusted partner â€” with the
                   reliability developers, contractors and institutions depend on, and the advice
                   homeowners value.
                 </p>
@@ -76,21 +78,29 @@ export default function AboutPage() {
           </Reveal>
 
           <Reveal delay={120}>
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                ["6+", "Core product lines"],
-                ["4", "Partner paint brands"],
-                ["100%", "Tested quality"],
-                ["On-time", "Reliable delivery"],
-              ].map(([stat, label]) => (
-                <div
-                  key={label}
-                  className="card-luxe flex flex-col items-center justify-center p-8 text-center"
-                >
-                  <div className="font-display text-4xl font-semibold gold-text">{stat}</div>
-                  <div className="mt-2 text-sm text-cream/60">{label}</div>
-                </div>
-              ))}
+            <div className="relative overflow-hidden rounded-3xl border border-gold/20">
+              <Image
+                src="/images/entryway-stone-arch.jpg"
+                alt="Luxury entryway with stone arch"
+                width={600}
+                height={500}
+                className="h-80 w-full object-cover lg:h-[420px]"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-navy-900/60 to-transparent" />
+              <div className="absolute bottom-6 left-6 grid grid-cols-2 gap-3">
+                {[
+                  ["6+", "Core product lines"],
+                  ["100%", "Tested quality"],
+                ].map(([stat, label]) => (
+                  <div
+                    key={label}
+                    className="rounded-xl border border-gold/25 bg-navy-900/80 px-4 py-3 text-center backdrop-blur-sm"
+                  >
+                    <div className="font-display text-2xl font-semibold gold-text">{stat}</div>
+                    <div className="mt-1 text-xs text-cream/60">{label}</div>
+                  </div>
+                ))}
+              </div>
             </div>
           </Reveal>
         </div>
@@ -122,8 +132,16 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="border-t border-gold/15 bg-navy-900/50 py-16">
-        <div className="container-luxe">
+      {/* Values strip with background */}
+      <section className="relative border-t border-gold/15 py-16">
+        <Image
+          src="/images/granite-stone-cladding.jpg"
+          alt=""
+          fill
+          className="object-cover object-center"
+        />
+        <div className="absolute inset-0 bg-navy-900/88" />
+        <div className="container-luxe relative">
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
             {WHY_PARTNER.map((w, i) => (
               <Reveal key={w.title} delay={i * 60}>

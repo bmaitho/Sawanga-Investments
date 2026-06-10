@@ -1,4 +1,5 @@
-"use client";
+﻿"use client";
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, ShieldCheck } from "lucide-react";
 import { COMPANY } from "@/lib/data";
@@ -6,7 +7,17 @@ import { COMPANY } from "@/lib/data";
 export default function Hero() {
   return (
     <section className="relative min-h-screen overflow-hidden">
-      {/* layered atmospheric background */}
+      {/* Hero background image */}
+      <Image
+        src="/images/kitchen-african-oasis.jpg"
+        alt="Luxury African kitchen interior"
+        fill
+        className="object-cover object-center"
+        priority
+      />
+
+      {/* Layered overlays */}
+      <div className="absolute inset-0 bg-navy-900/70" />
       <div className="absolute inset-0 grid-texture opacity-60" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(22,48,110,0.6),transparent_55%)]" />
       <div className="absolute -right-40 top-20 h-[520px] w-[520px] rounded-full bg-gold/10 blur-[120px]" />
@@ -32,11 +43,11 @@ export default function Hero() {
           </h1>
 
           <p
-            className="mt-7 max-w-xl animate-fade-up text-lg leading-relaxed text-cream/70"
+            className="mt-7 max-w-xl animate-fade-up text-lg leading-relaxed text-cream/80"
             style={{ animationDelay: "220ms", opacity: 0 }}
           >
             Quality finishing products. Reliable supply. Lasting value. Kenya&apos;s premium
-            partner for paints, putty, tiles, gypsum, granite and sanitaryware — serving
+            partner for paints, putty, tiles, gypsum, granite and sanitaryware â€” serving
             developers, contractors, institutions and homeowners.
           </p>
 
@@ -55,7 +66,7 @@ export default function Hero() {
 
           {/* developer credit ribbon */}
           <div
-            className="mt-12 flex max-w-md animate-fade-up items-center gap-4 rounded-xl border border-gold/20 bg-white/[0.03] p-4"
+            className="mt-12 flex max-w-md animate-fade-up items-center gap-4 rounded-xl border border-gold/20 bg-white/[0.05] p-4 backdrop-blur-sm"
             style={{ animationDelay: "460ms", opacity: 0 }}
           >
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-gold/15 text-gold">
@@ -66,51 +77,63 @@ export default function Hero() {
                 Exclusive flexible credit for developers
               </p>
               <Link href="/solutions#developers" className="text-xs text-gold hover:underline">
-                See developer solutions →
+                See developer solutions â†’
               </Link>
             </div>
           </div>
         </div>
 
-        {/* product showcase visual */}
-        <div className="hidden lg:col-span-5 lg:block">
+        {/* floating image cards */}
+        <div className="hidden lg:col-span-5 lg:flex lg:flex-col lg:gap-4">
           <div
-            className="relative animate-fade-up"
+            className="relative animate-fade-up overflow-hidden rounded-2xl border border-gold/20 shadow-luxe"
             style={{ animationDelay: "300ms", opacity: 0 }}
           >
-            <div className="absolute -inset-4 rounded-[2rem] border border-gold/15" />
-            <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-navy-700 to-navy-900 p-8 shadow-luxe">
-              <div className="grid grid-cols-3 gap-4">
-                {["Premium Emulsion", "Wall Master", "Premium Silk"].map((p, i) => (
-                  <div
-                    key={p}
-                    className="flex flex-col items-center gap-3 rounded-2xl border border-gold/20 bg-navy-900/60 p-4"
-                  >
-                    {/* paint tin illustration */}
-                    <svg viewBox="0 0 60 80" className="h-20 w-14">
-                      <rect x="8" y="20" width="44" height="52" rx="3" fill="#0a1a3f" stroke="#c8a24b" strokeWidth="1.5" />
-                      <rect x="6" y="16" width="48" height="8" rx="2" fill="#16306e" stroke="#c8a24b" strokeWidth="1.5" />
-                      <rect x="22" y="8" width="16" height="10" rx="2" fill="none" stroke="#c8a24b" strokeWidth="1.5" />
-                      <rect x="14" y="38" width="32" height="20" rx="2" fill="#c8a24b" opacity="0.18" />
-                      <text x="30" y="50" textAnchor="middle" fill="#e4c677" fontSize="6" fontFamily="sans-serif">SAWANGA</text>
-                    </svg>
-                    <span className="text-center text-[11px] font-medium text-cream/80">{p}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-6 gold-divider" />
-              <p className="mt-5 text-center text-sm text-cream/60">
-                Trusted brands. Tested quality.
-                <br />
-                <span className="text-gold">Proven results.</span>
-              </p>
+            <Image
+              src="/images/bathroom-gold-marble.jpg"
+              alt="Luxury gold marble bathroom"
+              width={480}
+              height={220}
+              className="h-44 w-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-navy-900/80 to-transparent" />
+            <p className="absolute bottom-3 left-4 text-sm font-semibold text-cream">Premium Bathroom Finishes</p>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div
+              className="relative animate-fade-up overflow-hidden rounded-2xl border border-gold/20 shadow-luxe"
+              style={{ animationDelay: "380ms", opacity: 0 }}
+            >
+              <Image
+                src="/images/bedroom-luxury-marble.jpg"
+                alt="Luxury bedroom"
+                width={220}
+                height={160}
+                className="h-36 w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-navy-900/80 to-transparent" />
+              <p className="absolute bottom-2 left-3 text-xs font-semibold text-cream">Luxury Interiors</p>
+            </div>
+            <div
+              className="relative animate-fade-up overflow-hidden rounded-2xl border border-gold/20 shadow-luxe"
+              style={{ animationDelay: "440ms", opacity: 0 }}
+            >
+              <Image
+                src="/images/villa-pool-tropical.jpg"
+                alt="Tropical villa"
+                width={220}
+                height={160}
+                className="h-36 w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-navy-900/80 to-transparent" />
+              <p className="absolute bottom-2 left-3 text-xs font-semibold text-cream">Developer Scale</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* keyword strip */}
-      <div className="relative border-t border-gold/15 bg-navy-900/50 py-4 backdrop-blur-sm">
+      <div className="relative border-t border-gold/15 bg-navy-900/60 py-4 backdrop-blur-sm">
         <div className="container-luxe text-center text-sm font-medium uppercase tracking-[0.2em] text-gold/80">
           {COMPANY.keywords}
         </div>

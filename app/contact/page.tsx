@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import { MapPin, Mail, Phone, MessageCircle, Clock } from "lucide-react";
 import PageHero from "@/components/PageHero";
 import ContactForm from "@/components/ContactForm";
@@ -7,34 +7,15 @@ import { COMPANY } from "@/lib/data";
 export const metadata: Metadata = {
   title: "Contact Us",
   description:
-    "Get in touch with SAWANGA Investment Limited — call, email, WhatsApp or visit us at Kitengela Plaza. We're here to help you finish right.",
+    "Get in touch with SAWANGA Investment Limited â€” call, email, WhatsApp or visit us at Kitengela Plaza. We're here to help you finish right.",
 };
 
 export default function ContactPage() {
   const items = [
-    {
-      icon: Phone,
-      title: "Call us",
-      lines: COMPANY.phones,
-      href: `tel:${COMPANY.phones[0].replace(/\s/g, "")}`,
-    },
-    {
-      icon: Mail,
-      title: "Email us",
-      lines: [COMPANY.email],
-      href: `mailto:${COMPANY.email}`,
-    },
-    {
-      icon: MessageCircle,
-      title: "WhatsApp",
-      lines: ["Chat with our team"],
-      href: `https://wa.me/${COMPANY.whatsapp}`,
-    },
-    {
-      icon: MapPin,
-      title: "Visit us",
-      lines: [COMPANY.location, COMPANY.address],
-    },
+    { icon: Phone, title: "Call us", lines: COMPANY.phones, href: `tel:${COMPANY.phones[0].replace(/\s/g, "")}` },
+    { icon: Mail, title: "Email us", lines: [COMPANY.email], href: `mailto:${COMPANY.email}` },
+    { icon: MessageCircle, title: "WhatsApp", lines: ["Chat with our team"], href: `https://wa.me/${COMPANY.whatsapp}` },
+    { icon: MapPin, title: "Visit us", lines: [COMPANY.location, COMPANY.address] },
   ];
 
   return (
@@ -43,7 +24,8 @@ export default function ContactPage() {
         eyebrow="Contact"
         title="Let's build something"
         highlight="great together."
-        subtitle="Reach out for quotations, product enquiries, developer credit, or anything else — our team is ready to help."
+        subtitle="Reach out for quotations, product enquiries, developer credit, or anything else â€” our team is ready to help."
+        bgImage="/images/door-arched-luxury.jpg"
       />
 
       <section className="pb-24">
@@ -78,8 +60,8 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-cream">Business hours</h3>
-                  <p className="text-sm text-cream/65">Mon – Fri: 8:00 – 5:30</p>
-                  <p className="text-sm text-cream/65">Sat: 8:00 – 1:00</p>
+                  <p className="text-sm text-cream/65">Mon â€“ Fri: 8:00 â€“ 5:30</p>
+                  <p className="text-sm text-cream/65">Sat: 8:00 â€“ 1:00</p>
                 </div>
               </div>
             </div>

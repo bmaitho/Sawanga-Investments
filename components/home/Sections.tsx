@@ -1,3 +1,4 @@
+﻿import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Star } from "lucide-react";
 import Icon from "@/components/Icon";
@@ -7,7 +8,15 @@ import { SOLUTIONS, PARTNERS } from "@/lib/data";
 export function SolutionsTeaser() {
   return (
     <section className="relative py-24">
-      <div className="container-luxe">
+      {/* subtle background */}
+      <Image
+        src="/images/living-room-afro-chic.jpg"
+        alt=""
+        fill
+        className="object-cover object-center"
+      />
+      <div className="absolute inset-0 bg-navy-900/88" />
+      <div className="container-luxe relative">
         <Reveal>
           <div className="flex flex-col items-end justify-between gap-6 md:flex-row md:items-center">
             <div className="max-w-xl">
@@ -78,6 +87,14 @@ export function PartnerBrands() {
 export function PainterTeaser() {
   return (
     <section className="relative overflow-hidden py-24">
+      {/* Background image */}
+      <Image
+        src="/images/bathroom-spa-stone.jpg"
+        alt=""
+        fill
+        className="object-cover object-center"
+      />
+      <div className="absolute inset-0 bg-navy-900/85" />
       <div className="absolute -left-20 top-10 h-80 w-80 rounded-full bg-gold/10 blur-[100px]" />
       <div className="container-luxe relative">
         <Reveal>
@@ -92,7 +109,7 @@ export function PainterTeaser() {
                 </h2>
                 <p className="mt-5 max-w-md text-cream/65">
                   Join the SAWANGA painter network. Register, refer your clients, track every
-                  approval, and earn a percentage of each referred sale — redeemable for cash
+                  approval, and earn a percentage of each referred sale â€” redeemable for cash
                   via M-Pesa, bank, or store credit.
                 </p>
                 <div className="mt-8 flex flex-wrap gap-4">
@@ -120,7 +137,7 @@ export function PainterTeaser() {
                     {[
                       ["Riverside Apartments", "approved", "KES 9,000"],
                       ["Greenview Villas", "approved", "KES 12,000"],
-                      ["Mwangi Residence", "pending", "—"],
+                      ["Mwangi Residence", "pending", "â€”"],
                     ].map(([name, status, amt]) => (
                       <div
                         key={name}
@@ -153,7 +170,15 @@ export function PainterTeaser() {
 export function FinalCTA() {
   return (
     <section className="relative overflow-hidden py-24">
-      <div className="absolute inset-0 bg-gradient-to-br from-navy-700 via-navy-800 to-navy-900" />
+      {/* Background image */}
+      <Image
+        src="/images/hallway-dark-moody.jpg"
+        alt=""
+        fill
+        className="object-cover object-center"
+      />
+      <div className="absolute inset-0 bg-navy-900/80" />
+      <div className="absolute inset-0 bg-gradient-to-br from-navy-700/60 via-navy-800/60 to-navy-900/60" />
       <div className="absolute inset-0 grid-texture opacity-40" />
       <div className="container-luxe relative text-center">
         <Reveal>
@@ -161,7 +186,7 @@ export function FinalCTA() {
             Let&apos;s build something <span className="gold-text">great together.</span>
           </h2>
           <p className="mx-auto mt-5 max-w-xl text-cream/70">
-            Tell us about your project and our team will put together a tailored quotation —
+            Tell us about your project and our team will put together a tailored quotation â€”
             with the right products, pricing and supply schedule.
           </p>
           <div className="mt-10 flex flex-wrap justify-center gap-4">

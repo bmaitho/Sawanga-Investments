@@ -1,6 +1,7 @@
 import Hero from "@/components/home/Hero";
 import CoreProducts from "@/components/home/CoreProducts";
 import WhyPartner from "@/components/home/WhyPartner";
+import ProjectGallery from "@/components/home/ProjectGallery";
 import {
   SolutionsTeaser,
   PartnerBrands,
@@ -14,6 +15,7 @@ export default function HomePage() {
       <Hero />
       <CoreProducts />
       <WhyPartner />
+      <ProjectGallery />
       <SolutionsTeaser />
       <PartnerBrands />
       <PainterTeaser />

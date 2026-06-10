@@ -1,3 +1,4 @@
+﻿import Image from "next/image";
 import Icon from "@/components/Icon";
 import Reveal from "@/components/Reveal";
 import { WHY_PARTNER } from "@/lib/data";
@@ -5,6 +6,14 @@ import { WHY_PARTNER } from "@/lib/data";
 export default function WhyPartner() {
   return (
     <section className="relative overflow-hidden py-24">
+      {/* Background image */}
+      <Image
+        src="/images/gypsum-led-ceiling.jpg"
+        alt=""
+        fill
+        className="object-cover object-center"
+      />
+      <div className="absolute inset-0 bg-navy-900/88" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(22,48,110,0.35),transparent_70%)]" />
       <div className="container-luxe relative">
         <Reveal>
