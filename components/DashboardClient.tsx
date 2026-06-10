@@ -2,16 +2,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Wallet,
-  Users,
-  Clock,
-  CheckCircle2,
-  Copy,
-  LogOut,
-  Plus,
-  Loader2,
-  Share2,
-  X,
+  Wallet, Users, Clock, CheckCircle2, Copy,
+  LogOut, Plus, Loader2, Share2, X, ChevronRight,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Logo } from "@/components/Logo";
@@ -28,14 +20,36 @@ const statusColor: Record<string, string> = {
   rejected: "text-red-400 bg-red-400/10",
 };
 
+// ── Product catalogue ────────────────────────────────────────────────────────
+const PRODUCTS = [
+  { id: "paints",     name: "Paints & Coatings",        unit: "20L tin",    price: 4800,  rate: 0.05 },
+  { id: "putty",      name: "Wall Master Putty",         unit: "20kg bag",   price: 1200,  rate: 0.05 },
+  { id: "tile_adh",   name: "Tile Adhesive",             unit: "20kg bag",   price: 980,   rate: 0.04 },
+  { id: "gypsum",     name: "Gypsum Board",              unit: "per sheet",  price: 850,   rate: 0.03 },
+  { id: "granite",    name: "Granite & Stone",           unit: "per m²",     price: 3500,  rate: 0.03 },
+  { id: "sanitary",   name: "Sanitaryware & Fittings",   unit: "per unit",   price: 6500,  rate: 0.03 },
+  { id: "primer",     name: "Primer / Undercoat",        unit: "20L tin",    price: 3200,  rate: 0.05 },
+  { id: "grout",      name: "Tile Grout",                unit: "5kg bag",    price: 420,   rate: 0.04 },
+];
+
+type Quantities = Record<string, number>;
+
+function calcOrder(qty: Quantities) {
+  let subtotal = 0;
+  let commission = 0;
+  PRODUCTS.forEach((p) => {
+    const q = qty[p.id] || 0;
+    const line = q * p.price;
+    subtotal += line;
+    commission += line * p.rate;
+  });
+  return { subtotal, commission };
+}
+
 export default function DashboardClient({
-  painter,
-  referrals,
-  redemptions,
+  painter, referrals, redemptions,
 }: {
-  painter: any;
-  referrals: any[];
-  redemptions: any[];
+  painter: any; referrals: any[]; redemptions: any[];
 }) {
   const router = useRouter();
   const [showRefer, setShowRefer] = useState(false);
@@ -91,15 +105,13 @@ export default function DashboardClient({
           </button>
         </div>
 
-        {/* referral code card */}
+        {/* referral code */}
         <div className="card-luxe mt-8 flex flex-col items-start justify-between gap-4 border-gold/25 p-6 md:flex-row md:items-center">
           <div className="flex items-center gap-3">
             <Share2 className="h-6 w-6 text-gold" />
             <div>
               <p className="text-sm text-cream/60">Your referral code</p>
-              <p className="font-display text-2xl font-semibold gold-text">
-                {painter.referral_code}
-              </p>
+              <p className="font-display text-2xl font-semibold gold-text">{painter.referral_code}</p>
             </div>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -110,9 +122,7 @@ export default function DashboardClient({
               href={`https://wa.me/?text=${encodeURIComponent(
                 `Get quality finishing products from SAWANGA Investment. Use my referral when you request a quote: ${referralLink}`
               )}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-gold"
+              target="_blank" rel="noopener noreferrer" className="btn-gold"
             >
               Share link
             </a>
@@ -164,16 +174,21 @@ export default function DashboardClient({
                 <thead className="bg-white/[0.03] text-cream/60">
                   <tr>
                     <th className="px-5 py-3 font-medium">Client</th>
-                    <th className="px-5 py-3 font-medium">Project</th>
+                    <th className="px-5 py-3 font-medium">Order value</th>
                     <th className="px-5 py-3 font-medium">Status</th>
-                    <th className="px-5 py-3 text-right font-medium">Earned</th>
+                    <th className="px-5 py-3 text-right font-medium">Commission</th>
                   </tr>
                 </thead>
                 <tbody>
                   {referrals.map((r) => (
                     <tr key={r.id} className="border-t border-white/10">
-                      <td className="px-5 py-4 text-cream/85">{r.client_name}</td>
-                      <td className="px-5 py-4 text-cream/60">{r.project_detail || "—"}</td>
+                      <td className="px-5 py-4">
+                        <div className="font-medium text-cream/85">{r.client_name}</div>
+                        <div className="text-xs text-cream/45">{r.client_phone}</div>
+                      </td>
+                      <td className="px-5 py-4 text-cream/60">
+                        {r.sale_value > 0 ? KES(r.sale_value) : "—"}
+                      </td>
                       <td className="px-5 py-4">
                         <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusColor[r.status] || "text-cream/60 bg-white/5"}`}>
                           {r.status}
@@ -222,7 +237,12 @@ export default function DashboardClient({
         )}
       </div>
 
-      {showRefer && <ReferModal onClose={() => setShowRefer(false)} onDone={() => { setShowRefer(false); router.refresh(); }} />}
+      {showRefer && (
+        <ReferModal
+          onClose={() => setShowRefer(false)}
+          onDone={() => { setShowRefer(false); router.refresh(); }}
+        />
+      )}
       {showRedeem && (
         <RedeemModal
           balance={Number(painter.total_points)}
@@ -234,10 +254,11 @@ export default function DashboardClient({
   );
 }
 
-function Modal({ children, onClose, title }: any) {
+// ── Modal shell ──────────────────────────────────────────────────────────────
+function Modal({ children, onClose, title, wide }: any) {
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-navy-900/80 p-4 backdrop-blur-sm">
-      <div className="card-luxe relative w-full max-w-md border-gold/25 bg-navy-800 p-8">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-navy-900/85 p-4 backdrop-blur-sm">
+      <div className={`card-luxe relative w-full border-gold/25 bg-[#0d1f4a] p-6 md:p-8 ${wide ? "max-w-2xl" : "max-w-md"} max-h-[90vh] overflow-y-auto`}>
         <button onClick={onClose} className="absolute right-5 top-5 text-cream/50 hover:text-gold">
           <X className="h-5 w-5" />
         </button>
@@ -248,49 +269,176 @@ function Modal({ children, onClose, title }: any) {
   );
 }
 
+// ── Refer modal — smart order builder ────────────────────────────────────────
 function ReferModal({ onClose, onDone }: any) {
-  const [f, setF] = useState({ client_name: "", client_phone: "", project_detail: "", est_value: "" });
+  const [step, setStep] = useState<1 | 2>(1);
+  const [client, setClient] = useState({ name: "", phone: "", location: "" });
+  const [qty, setQty] = useState<Quantities>({});
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
+
+  const { subtotal, commission } = calcOrder(qty);
+  const hasItems = subtotal > 0;
+
   const input =
     "w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-cream placeholder-cream/35 outline-none transition focus:border-gold/60";
 
-  async function submit() {
-    setErr("");
-    if (!f.client_name || !f.client_phone) {
+  function nextStep() {
+    if (!client.name || !client.phone) {
       setErr("Client name and phone are required.");
       return;
     }
+    setErr("");
+    setStep(2);
+  }
+
+  async function submit() {
+    if (!hasItems) { setErr("Add at least one product to the order."); return; }
+    setErr("");
     setLoading(true);
+
+    // Build project detail string from selected products
+    const lines = PRODUCTS
+      .filter((p) => (qty[p.id] || 0) > 0)
+      .map((p) => `${p.name} x${qty[p.id]} (${KES(qty[p.id] * p.price)})`)
+      .join(", ");
+
     const res = await fetch("/api/referrals", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(f),
+      body: JSON.stringify({
+        client_name: client.name,
+        client_phone: client.phone,
+        project_detail: `Location: ${client.location || "N/A"} | ${lines}`,
+        est_value: subtotal,
+      }),
     });
     setLoading(false);
-    if (!res.ok) {
-      setErr((await res.json()).error || "Failed.");
-      return;
-    }
+    if (!res.ok) { setErr((await res.json()).error || "Failed."); return; }
     onDone();
   }
 
   return (
-    <Modal onClose={onClose} title="Refer a client">
-      <div className="mt-5 space-y-4">
-        <input className={input} placeholder="Client name *" value={f.client_name} onChange={(e) => setF({ ...f, client_name: e.target.value })} />
-        <input className={input} placeholder="Client phone *" value={f.client_phone} onChange={(e) => setF({ ...f, client_phone: e.target.value })} />
-        <input className={input} placeholder="Project detail (e.g. 3-bedroom repaint)" value={f.project_detail} onChange={(e) => setF({ ...f, project_detail: e.target.value })} />
-        <input className={input} placeholder="Estimated value (KES, optional)" value={f.est_value} onChange={(e) => setF({ ...f, est_value: e.target.value })} />
+    <Modal onClose={onClose} title="Refer a client" wide>
+      {/* Step indicator */}
+      <div className="mt-4 flex items-center gap-2">
+        {[1, 2].map((s) => (
+          <div key={s} className="flex items-center gap-2">
+            <div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition ${step >= s ? "bg-gold text-navy-900" : "bg-white/10 text-cream/40"}`}>
+              {s}
+            </div>
+            <span className={`text-sm ${step >= s ? "text-cream" : "text-cream/40"}`}>
+              {s === 1 ? "Client details" : "Order & commission"}
+            </span>
+            {s < 2 && <ChevronRight className="h-4 w-4 text-cream/30" />}
+          </div>
+        ))}
       </div>
-      {err && <p className="mt-4 rounded-lg bg-red-500/10 px-4 py-2 text-sm text-red-300">{err}</p>}
-      <button onClick={submit} disabled={loading} className="btn-gold mt-6 w-full">
-        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit referral"}
-      </button>
+
+      {step === 1 && (
+        <div className="mt-6 space-y-4">
+          <input className={input} placeholder="Client name *" value={client.name}
+            onChange={(e) => setClient({ ...client, name: e.target.value })} />
+          <input className={input} placeholder="Client phone *" value={client.phone}
+            onChange={(e) => setClient({ ...client, phone: e.target.value })} />
+          <input className={input} placeholder="Site location / county (optional)" value={client.location}
+            onChange={(e) => setClient({ ...client, location: e.target.value })} />
+          {err && <p className="rounded-lg bg-red-500/10 px-4 py-2 text-sm text-red-300">{err}</p>}
+          <button onClick={nextStep} className="btn-gold w-full mt-2">
+            Next — Build order <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
+      {step === 2 && (
+        <div className="mt-6">
+          <p className="mb-4 text-sm text-cream/55">
+            Enter quantities for the products your client needs. Prices and your commission calculate automatically.
+          </p>
+
+          {/* Product table */}
+          <div className="overflow-hidden rounded-xl border border-white/10">
+            {/* Header */}
+            <div className="grid grid-cols-12 gap-2 bg-white/[0.04] px-4 py-2 text-xs font-medium uppercase tracking-wide text-cream/50">
+              <div className="col-span-5">Product</div>
+              <div className="col-span-2 text-right">Unit price</div>
+              <div className="col-span-2 text-center">Qty</div>
+              <div className="col-span-2 text-right">Total</div>
+              <div className="col-span-1 text-right text-gold">%</div>
+            </div>
+
+            {/* Rows */}
+            {PRODUCTS.map((p) => {
+              const q = qty[p.id] || 0;
+              const lineTotal = q * p.price;
+              const lineComm = lineTotal * p.rate;
+              return (
+                <div key={p.id} className={`grid grid-cols-12 items-center gap-2 border-t border-white/10 px-4 py-3 transition ${q > 0 ? "bg-gold/[0.04]" : ""}`}>
+                  <div className="col-span-5">
+                    <div className="text-sm font-medium text-cream">{p.name}</div>
+                    <div className="text-xs text-cream/45">{p.unit}</div>
+                  </div>
+                  <div className="col-span-2 text-right text-sm text-cream/60">
+                    {KES(p.price)}
+                  </div>
+                  <div className="col-span-2 flex justify-center">
+                    <input
+                      type="number" min={0} step={1}
+                      value={q || ""}
+                      placeholder="0"
+                      onChange={(e) => setQty({ ...qty, [p.id]: Math.max(0, parseInt(e.target.value) || 0) })}
+                      className="w-16 rounded-lg border border-white/15 bg-white/[0.05] px-2 py-1.5 text-center text-sm text-cream outline-none focus:border-gold/60"
+                    />
+                  </div>
+                  <div className={`col-span-2 text-right text-sm font-semibold ${q > 0 ? "text-cream" : "text-cream/30"}`}>
+                    {q > 0 ? KES(lineTotal) : "—"}
+                  </div>
+                  <div className={`col-span-1 text-right text-xs font-bold ${q > 0 ? "text-gold" : "text-cream/20"}`}>
+                    {q > 0 ? `+${KES(lineComm)}` : `${p.rate * 100}%`}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Summary */}
+          <div className={`mt-4 rounded-xl border p-5 transition ${hasItems ? "border-gold/30 bg-gold/[0.06]" : "border-white/10 bg-white/[0.02]"}`}>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-cream/60">Order subtotal</span>
+              <span className={`font-semibold ${hasItems ? "text-cream" : "text-cream/30"}`}>
+                {hasItems ? KES(subtotal) : "—"}
+              </span>
+            </div>
+            <div className="mt-2 flex items-center justify-between">
+              <span className="text-sm text-cream/60">Your commission</span>
+              <span className={`font-display text-xl font-semibold ${hasItems ? "gold-text" : "text-cream/30"}`}>
+                {hasItems ? KES(commission) : "—"}
+              </span>
+            </div>
+            {hasItems && (
+              <p className="mt-2 text-xs text-cream/45">
+                Commission is credited once SAWANGA confirms the order.
+              </p>
+            )}
+          </div>
+
+          {err && <p className="mt-3 rounded-lg bg-red-500/10 px-4 py-2 text-sm text-red-300">{err}</p>}
+
+          <div className="mt-5 flex gap-3">
+            <button onClick={() => setStep(1)} className="btn-outline flex-1">
+              ← Back
+            </button>
+            <button onClick={submit} disabled={loading || !hasItems} className="btn-gold flex-1 disabled:opacity-40">
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit referral"}
+            </button>
+          </div>
+        </div>
+      )}
     </Modal>
   );
 }
 
+// ── Redeem modal ─────────────────────────────────────────────────────────────
 function RedeemModal({ balance, onClose, onDone }: any) {
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("mpesa");
@@ -317,21 +465,23 @@ function RedeemModal({ balance, onClose, onDone }: any) {
 
   return (
     <Modal onClose={onClose} title="Redeem rewards">
-      <p className="mt-2 text-sm text-cream/60">Available balance: {KES(balance)}</p>
+      <p className="mt-2 text-sm text-cream/60">Available balance: <span className="font-semibold gold-text">{KES(balance)}</span></p>
       <div className="mt-5 space-y-4">
-        <input className={input} placeholder="Amount (KES)" value={amount} onChange={(e) => setAmount(e.target.value)} />
-        <div className="flex gap-3">
-          {["mpesa", "bank", "credit"].map((m) => (
-            <button
-              key={m}
-              onClick={() => setMethod(m)}
-              className={`flex-1 rounded-xl border px-3 py-2 text-sm capitalize transition ${
-                method === m ? "border-gold bg-gold/15 text-gold" : "border-white/10 text-cream/70"
-              }`}
-            >
-              {m === "mpesa" ? "M-Pesa" : m}
-            </button>
-          ))}
+        <input className={input} placeholder="Amount (KES)" value={amount}
+          onChange={(e) => setAmount(e.target.value)} />
+        <div>
+          <p className="mb-2 text-sm text-cream/55">Payout method</p>
+          <div className="flex gap-3">
+            {["mpesa", "bank", "credit"].map((m) => (
+              <button key={m} onClick={() => setMethod(m)}
+                className={`flex-1 rounded-xl border px-3 py-2 text-sm capitalize transition ${
+                  method === m ? "border-gold bg-gold/15 text-gold" : "border-white/10 text-cream/70"
+                }`}
+              >
+                {m === "mpesa" ? "M-Pesa" : m}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
       {err && <p className="mt-4 rounded-lg bg-red-500/10 px-4 py-2 text-sm text-red-300">{err}</p>}

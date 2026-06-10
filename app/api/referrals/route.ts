@@ -26,8 +26,7 @@ export async function POST(req: Request) {
       client_name: String(body.client_name).slice(0, 120),
       client_phone: String(body.client_phone).slice(0, 40),
       project_detail: body.project_detail || null,
-      est_value: body.est_value ? Number(body.est_value) : null,
-      reward_rate: DEFAULT_RATE,
+      sale_value: body.est_value ? Number(body.est_value) : null,
       status: "pending",
     });
 
