@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
@@ -8,9 +8,15 @@ import Reveal from "@/components/Reveal";
 import { SOLUTIONS } from "@/lib/data";
 
 export const metadata: Metadata = {
-  title: "Solutions â€” Developers, Contractors, Institutions & Homeowners",
-  description:
-    "Project-focused finishing solutions tailored for developers (with flexible credit), contractors, institutions and homeowners across Kenya.",
+  title: "Solutions",
+  description: "Project-focused finishing solutions for developers, contractors, institutions and homeowners.",
+};
+
+const SOLUTION_IMAGES: Record<string, string> = {
+  developers:   "/images/apartments-golden-hour.jpg",
+  contractors:  "/images/kitchen-dark-luxury.jpg",
+  institutions: "/images/corridor-luxury-water.jpg",
+  homeowners:   "/images/kitchen-warm-modern.jpg",
 };
 
 export default function SolutionsPage() {
@@ -20,96 +26,77 @@ export default function SolutionsPage() {
         eyebrow="Solutions"
         title="Built around"
         highlight="your project."
-        subtitle="Whoever you are and whatever you're building, SAWANGA matches the right products, pricing and supply to your needs."
+        subtitle="Whoever you are and whatever you are building, SAWANGA matches the right products, pricing and supply to your needs."
         bgImage="/images/apartments-golden-hour.jpg"
       />
 
       <section className="pb-24">
         <div className="container-luxe grid gap-8 lg:grid-cols-2">
-          {SOLUTIONS.map((s, i) => (
-            <Reveal key={s.slug} delay={(i % 2) * 90}>
-              <div
-                id={s.slug}
-                className="card-luxe flex h-full scroll-mt-28 flex-col overflow-hidden hover:border-gold/30"
-              >
-                {/* Image banner per solution */}
-                {[
-                  { slug: "developers", img: "/images/apartments-golden-hour.jpg" },
-                  { slug: "contractors", img: "/images/kitchen-dark-luxury.jpg" },
-                  { slug: "institutions", img: "/images/corridor-luxury-water.jpg" },
-                  { slug: "homeowners", img: "/images/kitchen-warm-modern.jpg" },
-                ].find(x => x.slug === s.slug) && (
-                  <div className="relative h-44 overflow-hidden">
-                    <Image
-                      src={[
-                        { slug: "developers", img: "/images/apartments-golden-hour.jpg" },
-                        { slug: "contractors", img: "/images/kitchen-dark-luxury.jpg" },
-                        { slug: "institutions", img: "/images/corridor-luxury-water.jpg" },
-                        { slug: "homeowners", img: "/images/kitchen-warm-modern.jpg" },
-                      ].find(x => x.slug === s.slug)!.img}
-                      alt={s.title}
-                      fill
-                      className="object-cover object-center"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-navy-900/80 to-transparent" />
-                    <div className="absolute bottom-4 left-6 flex items-center gap-3">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gold/20 backdrop-blur-sm text-gold">
-                        <Icon name={s.icon} className="h-6 w-6" />
-                      </div>
-                      <div>
-                        <h2 className="font-display text-xl font-semibold text-cream">{s.title}</h2>
-                        <p className="text-xs uppercase tracking-wide text-gold/70">{s.audience}</p>
+          {SOLUTIONS.map((s, i) => {
+            const imgSrc = SOLUTION_IMAGES[s.slug];
+            return (
+              <Reveal key={s.slug} delay={(i % 2) * 90}>
+                <div id={s.slug} className="card-luxe flex h-full scroll-mt-28 flex-col overflow-hidden hover:border-gold/30">
+                  {imgSrc && (
+                    <div className="relative w-full overflow-hidden" style={{ paddingBottom: "52%" }}>
+                      <Image
+                        src={imgSrc}
+                        alt={s.title}
+                        fill
+                        className="object-cover object-center"
+                        sizes="(max-width: 1024px) 100vw, 50vw"
+                      />
+                      {/* strong gradient — text must be legible on mobile */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-navy-900/95 via-navy-900/50 to-navy-900/10" />
+                      <div className="absolute bottom-4 left-5 right-5 flex items-center gap-3">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gold/20 text-gold backdrop-blur-sm">
+                          <Icon name={s.icon} className="h-6 w-6" />
+                        </div>
+                        <div>
+                          <h2 className="font-display text-xl font-semibold leading-tight text-cream drop-shadow-lg">{s.title}</h2>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-gold drop-shadow-md">{s.audience}</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
-                <div className="flex flex-1 flex-col p-8 md:p-10">
-                  <p className="leading-relaxed text-cream/70">{s.description}</p>
-                  <div className="mt-6 space-y-3">
-                    {s.points.map((pt) => (
-                      <div key={pt} className="flex items-center gap-3">
-                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gold/15 text-gold">
-                          <Check className="h-3.5 w-3.5" />
-                        </span>
-                        <span className="text-sm text-cream/80">{pt}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-auto pt-8">
-                    <Link
-                      href={`/quote?type=${s.slug}`}
-                      className="inline-flex items-center gap-1 font-semibold text-gold hover:underline"
-                    >
-                      Get started <ArrowRight className="h-4 w-4" />
-                    </Link>
+                  )}
+                  <div className="flex flex-1 flex-col p-7 md:p-8">
+                    <p className="leading-relaxed text-cream/75">{s.description}</p>
+                    <div className="mt-5 space-y-3">
+                      {s.points.map((pt) => (
+                        <div key={pt} className="flex items-start gap-3">
+                          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gold/15 text-gold">
+                            <Check className="h-3 w-3" />
+                          </span>
+                          <span className="text-sm text-cream/80">{pt}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-auto pt-7">
+                      <Link href={`/quote?type=${s.slug}`} className="inline-flex items-center gap-1.5 text-sm font-semibold text-gold hover:underline">
+                        Get started <ArrowRight className="h-4 w-4" />
+                      </Link>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Reveal>
-          ))}
+              </Reveal>
+            );
+          })}
         </div>
       </section>
 
-      {/* Developer credit highlight */}
       <section className="relative border-t border-gold/15 py-20">
-        <Image
-          src="/images/bathroom-stone-basin.jpg"
-          alt=""
-          fill
-          className="object-cover object-center"
-        />
-        <div className="absolute inset-0 bg-gradient-to-br from-navy-700/90 to-navy-900/90" />
+        <Image src="/images/bathroom-stone-basin.jpg" alt="" fill className="object-cover object-center" />
+        <div className="absolute inset-0 bg-gradient-to-br from-navy-700/92 to-navy-900/92" />
         <div className="container-luxe relative">
           <Reveal>
             <div className="mx-auto max-w-3xl text-center">
               <span className="eyebrow">For Developers</span>
-              <h2 className="mt-4 font-display text-4xl font-semibold text-cream">
-                Exclusive <span className="gold-text">flexible credit</span> terms
+              <h2 className="mt-4 font-display text-3xl font-semibold text-cream sm:text-4xl">
+                Exclusive <span className="text-white font-bold">flexible credit</span> terms
               </h2>
-              <p className="mt-5 text-cream/70">
+              <p className="mt-5 text-cream/75">
                 We understand developer cash flow. Qualifying developers access flexible credit,
-                volume pricing and scheduled deliveries â€” so your finishing supply never holds up
-                your build. Speak to us about setting up a credit account.
+                volume pricing and scheduled deliveries.
               </p>
               <Link href="/contact" className="btn-gold mt-8">
                 Apply for developer credit <ArrowRight className="h-4 w-4" />

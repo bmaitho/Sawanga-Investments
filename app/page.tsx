@@ -18,6 +18,7 @@ export default function HomePage() {
       <ProjectGallery />
       <SolutionsTeaser />
       <PartnerBrands />
+      <div className="gold-divider" />
       <PainterTeaser />
       <FinalCTA />
     </>

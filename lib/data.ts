@@ -154,8 +154,8 @@ export const WHY_PARTNER = [
 ];
 
 export const PARTNERS = [
-  { name: "Zouli Paints", note: "Premium decorative paints" },
-  { name: "Crystal Paints", note: "Trusted protective coatings" },
-  { name: "Dura Paints", note: "Durable everyday finishes" },
-  { name: "Crown Paints", note: "Leading East African brand" },
+  { name: "Zouli Paints",   note: "Premium decorative paints",    image: "/images/brand-zouli.png" },
+  { name: "Crystal Paints", note: "Trusted protective coatings",  image: "/images/brand-crystal.png" },
+  { name: "Dura Paints",    note: "Durable everyday finishes",    image: "/images/brand-dura.jpg" },
+  { name: "Crown Paints",   note: "Leading East African brand",   image: "/images/brand-crown.jpg" },
 ];
