@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -20,13 +20,13 @@ const statusColor: Record<string, string> = {
   rejected: "text-red-400 bg-red-400/10",
 };
 
-// ── Product catalogue ────────────────────────────────────────────────────────
+// â”€â”€ Product catalogue â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const PRODUCTS = [
   { id: "paints",     name: "Paints & Coatings",        unit: "20L tin",    price: 4800,  rate: 0.05 },
   { id: "putty",      name: "Wall Master Putty",         unit: "20kg bag",   price: 1200,  rate: 0.05 },
   { id: "tile_adh",   name: "Tile Adhesive",             unit: "20kg bag",   price: 980,   rate: 0.04 },
   { id: "gypsum",     name: "Gypsum Board",              unit: "per sheet",  price: 850,   rate: 0.03 },
-  { id: "granite",    name: "Granite & Stone",           unit: "per m²",     price: 3500,  rate: 0.03 },
+  { id: "granite",    name: "Granite & Stone",           unit: "per mÂ²",     price: 3500,  rate: 0.03 },
   { id: "sanitary",   name: "Sanitaryware & Fittings",   unit: "per unit",   price: 6500,  rate: 0.03 },
   { id: "primer",     name: "Primer / Undercoat",        unit: "20L tin",    price: 3200,  rate: 0.05 },
   { id: "grout",      name: "Tile Grout",                unit: "5kg bag",    price: 420,   rate: 0.04 },
@@ -80,7 +80,7 @@ export default function DashboardClient({
   if (!painter) {
     return (
       <div className="flex min-h-screen items-center justify-center pt-20 text-cream/70">
-        Setting up your profile… please refresh.
+        Setting up your profileâ€¦ please refresh.
       </div>
     );
   }
@@ -132,7 +132,7 @@ export default function DashboardClient({
         {/* stats */}
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { icon: Wallet, label: "Reward balance", value: KES(painter.total_points), gold: true },
+            { icon: Wallet, label: "Reward balance", value: KES(painter.reward_points), gold: true },
             { icon: Users, label: "Total referrals", value: referrals.length },
             { icon: CheckCircle2, label: "Approved", value: approved.length },
             { icon: Clock, label: "Pending", value: pending.length },
@@ -154,7 +154,7 @@ export default function DashboardClient({
           </button>
           <button
             onClick={() => setShowRedeem(true)}
-            disabled={Number(painter.total_points) <= 0}
+            disabled={Number(painter.reward_points) <= 0}
             className="btn-outline disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Wallet className="h-4 w-4" /> Redeem rewards
@@ -187,7 +187,7 @@ export default function DashboardClient({
                         <div className="text-xs text-cream/45">{r.client_phone}</div>
                       </td>
                       <td className="px-5 py-4 text-cream/60">
-                        {r.sale_value > 0 ? KES(r.sale_value) : "—"}
+                        {r.sale_value > 0 ? KES(r.sale_value) : "â€”"}
                       </td>
                       <td className="px-5 py-4">
                         <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusColor[r.status] || "text-cream/60 bg-white/5"}`}>
@@ -195,7 +195,7 @@ export default function DashboardClient({
                         </span>
                       </td>
                       <td className="px-5 py-4 text-right font-semibold text-cream">
-                        {r.points_awarded > 0 ? KES(r.points_awarded) : "—"}
+                        {r.points_awarded > 0 ? KES(r.points_awarded) : "â€”"}
                       </td>
                     </tr>
                   ))}
@@ -245,7 +245,7 @@ export default function DashboardClient({
       )}
       {showRedeem && (
         <RedeemModal
-          balance={Number(painter.total_points)}
+          balance={Number(painter.reward_points)}
           onClose={() => setShowRedeem(false)}
           onDone={() => { setShowRedeem(false); router.refresh(); }}
         />
@@ -254,7 +254,7 @@ export default function DashboardClient({
   );
 }
 
-// ── Modal shell ──────────────────────────────────────────────────────────────
+// â”€â”€ Modal shell â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Modal({ children, onClose, title, wide }: any) {
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-navy-900/85 p-4 backdrop-blur-sm">
@@ -269,7 +269,7 @@ function Modal({ children, onClose, title, wide }: any) {
   );
 }
 
-// ── Refer modal — smart order builder ────────────────────────────────────────
+// â”€â”€ Refer modal â€” smart order builder â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function ReferModal({ onClose, onDone }: any) {
   const [step, setStep] = useState<1 | 2>(1);
   const [client, setClient] = useState({ name: "", phone: "", location: "" });
@@ -345,7 +345,7 @@ function ReferModal({ onClose, onDone }: any) {
             onChange={(e) => setClient({ ...client, location: e.target.value })} />
           {err && <p className="rounded-lg bg-red-500/10 px-4 py-2 text-sm text-red-300">{err}</p>}
           <button onClick={nextStep} className="btn-gold w-full mt-2">
-            Next — Build order <ChevronRight className="h-4 w-4" />
+            Next â€” Build order <ChevronRight className="h-4 w-4" />
           </button>
         </div>
       )}
@@ -391,7 +391,7 @@ function ReferModal({ onClose, onDone }: any) {
                     />
                   </div>
                   <div className={`col-span-2 text-right text-sm font-semibold ${q > 0 ? "text-cream" : "text-cream/30"}`}>
-                    {q > 0 ? KES(lineTotal) : "—"}
+                    {q > 0 ? KES(lineTotal) : "â€”"}
                   </div>
                   <div className={`col-span-1 text-right text-xs font-bold ${q > 0 ? "text-gold" : "text-cream/20"}`}>
                     {q > 0 ? `+${KES(lineComm)}` : `${p.rate * 100}%`}
@@ -406,13 +406,13 @@ function ReferModal({ onClose, onDone }: any) {
             <div className="flex items-center justify-between">
               <span className="text-sm text-cream/60">Order subtotal</span>
               <span className={`font-semibold ${hasItems ? "text-cream" : "text-cream/30"}`}>
-                {hasItems ? KES(subtotal) : "—"}
+                {hasItems ? KES(subtotal) : "â€”"}
               </span>
             </div>
             <div className="mt-2 flex items-center justify-between">
               <span className="text-sm text-cream/60">Your commission</span>
               <span className={`font-display text-xl font-semibold ${hasItems ? "gold-text" : "text-cream/30"}`}>
-                {hasItems ? KES(commission) : "—"}
+                {hasItems ? KES(commission) : "â€”"}
               </span>
             </div>
             {hasItems && (
@@ -426,7 +426,7 @@ function ReferModal({ onClose, onDone }: any) {
 
           <div className="mt-5 flex gap-3">
             <button onClick={() => setStep(1)} className="btn-outline flex-1">
-              ← Back
+              â† Back
             </button>
             <button onClick={submit} disabled={loading || !hasItems} className="btn-gold flex-1 disabled:opacity-40">
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit referral"}
@@ -438,7 +438,7 @@ function ReferModal({ onClose, onDone }: any) {
   );
 }
 
-// ── Redeem modal ─────────────────────────────────────────────────────────────
+// â”€â”€ Redeem modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function RedeemModal({ balance, onClose, onDone }: any) {
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("mpesa");
@@ -491,3 +491,4 @@ function RedeemModal({ balance, onClose, onDone }: any) {
     </Modal>
   );
 }
+

@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 export async function POST(req: Request) {
@@ -18,11 +18,11 @@ export async function POST(req: Request) {
     // Check balance
     const { data: painter } = await supabase
       .from("painters")
-      .select("total_points")
+      .select("reward_points")
       .eq("id", user.id)
       .single();
 
-    if (!painter || Number(painter.total_points) < amount) {
+    if (!painter || Number(painter.reward_points) < amount) {
       return NextResponse.json({ error: "Insufficient reward balance." }, { status: 400 });
     }
 
@@ -40,3 +40,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
 }
+
