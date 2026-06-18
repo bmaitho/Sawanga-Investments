@@ -1,8 +1,9 @@
-﻿"use client";
+"use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   CheckCircle2, XCircle, Clock, Users, Wallet,
-  RefreshCw, ChevronDown, ChevronUp, BadgeCheck,
+  RefreshCw, ChevronDown, ChevronUp, BadgeCheck, LogOut,
 } from "lucide-react";
 
 const KES = (n: number) =>
@@ -31,8 +32,25 @@ export default function AdminClient({
   const [loading, setLoading] = useState<string | null>(null);
   const [localReferrals, setLocalReferrals] = useState(referrals);
   const [localRedemptions, setLocalRedemptions] = useState(redemptions);
-  const [refreshing, setRefreshing] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const router = useRouter();
+
+  async function handleLogout() {
+    await fetch("/api/admin/logout", { method: "POST" });
+    router.refresh();
+  }
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    const res = await fetch("/api/admin/data?adminKey=" + adminKey);
+    if (res.ok) {
+      const d = await res.json();
+      setLocalReferrals(d.referrals);
+      setLocalRedemptions(d.redemptions);
+    }
+    setRefreshing(false);
+  }
 
   const pending = localReferrals.filter((r) => r.status === "pending");
   const pendingRedemptions = localRedemptions.filter((r) => r.status === "requested");
@@ -91,7 +109,7 @@ export default function AdminClient({
   ];
 
   return (
-    <div className="min-h-screen bg-navy-900 pt-28">
+    <div className="min-h-screen bg-navy-900 pt-8">
       <div className="absolute inset-0 grid-texture opacity-30 pointer-events-none" />
       <div className="container-luxe relative pb-24">
         {/* Header */}
@@ -102,21 +120,20 @@ export default function AdminClient({
             </h1>
             <p className="mt-1 text-sm text-cream/45">Painter portal management</p>
           </div>
-          <button
-            onClick={async () => {
-              setRefreshing(true);
-              const res = await fetch("/api/admin/data?adminKey=" + adminKey);
-              if (res.ok) {
-                const d = await res.json();
-                setLocalReferrals(d.referrals);
-                setLocalRedemptions(d.redemptions);
-              }
-              setRefreshing(false);
-            }}
-            className="btn-outline gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} /> Refresh
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={handleRefresh}
+              className="btn-outline gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} /> Refresh
+            </button>
+            <button
+              onClick={handleLogout}
+              className="btn-outline gap-2 border-red-400/30 text-red-400 hover:bg-red-400/10"
+            >
+              <LogOut className="h-4 w-4" /> Log out
+            </button>
+          </div>
         </div>
 
         {/* Summary cards */}
@@ -158,7 +175,7 @@ export default function AdminClient({
           ))}
         </div>
 
-        {/* â”€â”€ REFERRALS TAB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* ── REFERRALS TAB ─────────────────────────────────────────────── */}
         {tab === "referrals" && (
           <div className="mt-6 space-y-3">
             {localReferrals.length === 0 && (
@@ -180,18 +197,18 @@ export default function AdminClient({
                       </div>
                       <div className="mt-1 flex flex-wrap gap-3 text-xs text-cream/45">
                         <span>{r.client_phone}</span>
-                        <span>Â·</span>
+                        <span>·</span>
                         <span className="font-medium text-cream/60">
                           by {r.painters?.full_name || "Unknown painter"}
                         </span>
-                        <span>Â·</span>
+                        <span>·</span>
                         <span>{new Date(r.created_at).toLocaleDateString("en-KE")}</span>
                       </div>
                     </div>
 
                     <div className="text-right">
                       <div className="font-semibold text-cream">
-                        {r.sale_value > 0 ? KES(r.sale_value) : "â€”"}
+                        {r.sale_value > 0 ? KES(r.sale_value) : "—"}
                       </div>
                       <div className="text-xs text-gold">
                         {r.points_awarded > 0 ? `+${KES(r.points_awarded)}` : "commission pending"}
@@ -242,7 +259,7 @@ export default function AdminClient({
           </div>
         )}
 
-        {/* â”€â”€ PAINTERS TAB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* ── PAINTERS TAB ──────────────────────────────────────────────── */}
         {tab === "painters" && (
           <div className="mt-6 overflow-hidden rounded-2xl border border-white/10">
             <table className="w-full text-left text-sm">
@@ -264,10 +281,10 @@ export default function AdminClient({
                       <div className="text-xs text-cream/40">{p.email}</div>
                     </td>
                     <td className="px-5 py-4 text-cream/60">{p.phone}</td>
-                    <td className="px-5 py-4 capitalize text-cream/60">{p.county || "â€”"}</td>
+                    <td className="px-5 py-4 capitalize text-cream/60">{p.county || "—"}</td>
                     <td className="px-5 py-4">
                       <span className="rounded-lg bg-gold/10 px-3 py-1 font-mono text-xs font-semibold text-gold">
-                        {p.referral_code || "â€”"}
+                        {p.referral_code || "—"}
                       </span>
                     </td>
                     <td className="px-5 py-4 text-right font-semibold text-cream">
@@ -286,7 +303,7 @@ export default function AdminClient({
           </div>
         )}
 
-        {/* â”€â”€ REDEMPTIONS TAB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* ── REDEMPTIONS TAB ───────────────────────────────────────────── */}
         {tab === "redemptions" && (
           <div className="mt-6 space-y-3">
             {localRedemptions.length === 0 && (
@@ -303,9 +320,9 @@ export default function AdminClient({
                   </div>
                   <div className="mt-1 flex flex-wrap gap-3 text-xs text-cream/45">
                     <span>{r.painters?.phone}</span>
-                    <span>Â·</span>
+                    <span>·</span>
                     <span className="capitalize">{r.method === "mpesa" ? "M-Pesa" : r.method}</span>
-                    <span>Â·</span>
+                    <span>·</span>
                     <span>{new Date(r.created_at).toLocaleDateString("en-KE")}</span>
                   </div>
                 </div>
