@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState } from "react";
 import {
   CheckCircle2, XCircle, Clock, Users, Wallet,
@@ -31,6 +31,7 @@ export default function AdminClient({
   const [loading, setLoading] = useState<string | null>(null);
   const [localReferrals, setLocalReferrals] = useState(referrals);
   const [localRedemptions, setLocalRedemptions] = useState(redemptions);
+  const [refreshing, setRefreshing] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const pending = localReferrals.filter((r) => r.status === "pending");
@@ -102,10 +103,19 @@ export default function AdminClient({
             <p className="mt-1 text-sm text-cream/45">Painter portal management</p>
           </div>
           <button
-            onClick={() => window.location.reload()}
+            onClick={async () => {
+              setRefreshing(true);
+              const res = await fetch("/api/admin/data?adminKey=" + adminKey);
+              if (res.ok) {
+                const d = await res.json();
+                setLocalReferrals(d.referrals);
+                setLocalRedemptions(d.redemptions);
+              }
+              setRefreshing(false);
+            }}
             className="btn-outline gap-2"
           >
-            <RefreshCw className="h-4 w-4" /> Refresh
+            <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} /> Refresh
           </button>
         </div>
 
@@ -148,7 +158,7 @@ export default function AdminClient({
           ))}
         </div>
 
-        {/* ── REFERRALS TAB ─────────────────────────────────────────────── */}
+        {/* â”€â”€ REFERRALS TAB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         {tab === "referrals" && (
           <div className="mt-6 space-y-3">
             {localReferrals.length === 0 && (
@@ -170,18 +180,18 @@ export default function AdminClient({
                       </div>
                       <div className="mt-1 flex flex-wrap gap-3 text-xs text-cream/45">
                         <span>{r.client_phone}</span>
-                        <span>·</span>
+                        <span>Â·</span>
                         <span className="font-medium text-cream/60">
                           by {r.painters?.full_name || "Unknown painter"}
                         </span>
-                        <span>·</span>
+                        <span>Â·</span>
                         <span>{new Date(r.created_at).toLocaleDateString("en-KE")}</span>
                       </div>
                     </div>
 
                     <div className="text-right">
                       <div className="font-semibold text-cream">
-                        {r.sale_value > 0 ? KES(r.sale_value) : "—"}
+                        {r.sale_value > 0 ? KES(r.sale_value) : "â€”"}
                       </div>
                       <div className="text-xs text-gold">
                         {r.points_awarded > 0 ? `+${KES(r.points_awarded)}` : "commission pending"}
@@ -232,7 +242,7 @@ export default function AdminClient({
           </div>
         )}
 
-        {/* ── PAINTERS TAB ──────────────────────────────────────────────── */}
+        {/* â”€â”€ PAINTERS TAB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         {tab === "painters" && (
           <div className="mt-6 overflow-hidden rounded-2xl border border-white/10">
             <table className="w-full text-left text-sm">
@@ -254,10 +264,10 @@ export default function AdminClient({
                       <div className="text-xs text-cream/40">{p.email}</div>
                     </td>
                     <td className="px-5 py-4 text-cream/60">{p.phone}</td>
-                    <td className="px-5 py-4 capitalize text-cream/60">{p.county || "—"}</td>
+                    <td className="px-5 py-4 capitalize text-cream/60">{p.county || "â€”"}</td>
                     <td className="px-5 py-4">
                       <span className="rounded-lg bg-gold/10 px-3 py-1 font-mono text-xs font-semibold text-gold">
-                        {p.referral_code || "—"}
+                        {p.referral_code || "â€”"}
                       </span>
                     </td>
                     <td className="px-5 py-4 text-right font-semibold text-cream">
@@ -276,7 +286,7 @@ export default function AdminClient({
           </div>
         )}
 
-        {/* ── REDEMPTIONS TAB ───────────────────────────────────────────── */}
+        {/* â”€â”€ REDEMPTIONS TAB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         {tab === "redemptions" && (
           <div className="mt-6 space-y-3">
             {localRedemptions.length === 0 && (
@@ -293,9 +303,9 @@ export default function AdminClient({
                   </div>
                   <div className="mt-1 flex flex-wrap gap-3 text-xs text-cream/45">
                     <span>{r.painters?.phone}</span>
-                    <span>·</span>
+                    <span>Â·</span>
                     <span className="capitalize">{r.method === "mpesa" ? "M-Pesa" : r.method}</span>
-                    <span>·</span>
+                    <span>Â·</span>
                     <span>{new Date(r.created_at).toLocaleDateString("en-KE")}</span>
                   </div>
                 </div>
