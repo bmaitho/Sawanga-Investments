@@ -11,7 +11,7 @@ export async function GET(req: Request) {
 
   const supabase = createServiceClient();
 
-  const [{ data: referrals }, { data: painters }, { data: redemptions }] =
+  const [{ data: referrals }, { data: painters }, { data: redemptions }, { data: transactions }] =
     await Promise.all([
       supabase
         .from("referrals")
@@ -25,11 +25,16 @@ export async function GET(req: Request) {
         .from("redemptions")
         .select("*, painters(full_name, phone, email)")
         .order("created_at", { ascending: false }),
+      supabase
+        .from("transactions")
+        .select("*, transaction_items(*), transaction_payments(*)")
+        .order("created_at", { ascending: false }),
     ]);
 
   return NextResponse.json({
     referrals: referrals || [],
     painters: painters || [],
     redemptions: redemptions || [],
+    transactions: transactions || [],
   });
 }

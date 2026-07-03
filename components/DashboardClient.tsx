@@ -1,12 +1,13 @@
-﻿"use client";
+"use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Wallet, Users, Clock, CheckCircle2, Copy,
-  LogOut, Plus, Loader2, Share2, X, ChevronRight,
+  LogOut, Plus, Loader2, Share2, X, ChevronRight, Trash2, ShoppingCart,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Logo } from "@/components/Logo";
+import { CATALOG, CATALOG_CATEGORIES } from "@/lib/data";
 
 const KES = (n: number) =>
   "KES " + Number(n || 0).toLocaleString("en-KE", { maximumFractionDigits: 0 });
@@ -20,28 +21,25 @@ const statusColor: Record<string, string> = {
   rejected: "text-red-400 bg-red-400/10",
 };
 
-// â”€â”€ Product catalogue â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-const PRODUCTS = [
-  { id: "paints",     name: "Paints & Coatings",        unit: "20L tin",    price: 4800,  rate: 0.05 },
-  { id: "putty",      name: "Wall Master Putty",         unit: "20kg bag",   price: 1200,  rate: 0.05 },
-  { id: "tile_adh",   name: "Tile Adhesive",             unit: "20kg bag",   price: 980,   rate: 0.04 },
-  { id: "gypsum",     name: "Gypsum Board",              unit: "per sheet",  price: 850,   rate: 0.03 },
-  { id: "granite",    name: "Granite & Stone",           unit: "per mÂ²",     price: 3500,  rate: 0.03 },
-  { id: "sanitary",   name: "Sanitaryware & Fittings",   unit: "per unit",   price: 6500,  rate: 0.03 },
-  { id: "primer",     name: "Primer / Undercoat",        unit: "20L tin",    price: 3200,  rate: 0.05 },
-  { id: "grout",      name: "Tile Grout",                unit: "5kg bag",    price: 420,   rate: 0.04 },
-];
+// -- Order builder: category > product > brand > unit > qty ---------
+type OrderLine = {
+  key: string;
+  itemId: string;
+  name: string;
+  brand: string;
+  unitLabel: string;
+  unitPrice: number;
+  rate: number;
+  qty: number;
+};
 
-type Quantities = Record<string, number>;
-
-function calcOrder(qty: Quantities) {
+function calcOrder(lines: OrderLine[]) {
   let subtotal = 0;
   let commission = 0;
-  PRODUCTS.forEach((p) => {
-    const q = qty[p.id] || 0;
-    const line = q * p.price;
+  lines.forEach((l) => {
+    const line = l.qty * l.unitPrice;
     subtotal += line;
-    commission += line * p.rate;
+    commission += line * l.rate;
   });
   return { subtotal, commission };
 }
@@ -80,7 +78,7 @@ export default function DashboardClient({
   if (!painter) {
     return (
       <div className="flex min-h-screen items-center justify-center pt-20 text-cream/70">
-        Setting up your profileâ€¦ please refresh.
+        Setting up your profile... please refresh.
       </div>
     );
   }
@@ -187,7 +185,7 @@ export default function DashboardClient({
                         <div className="text-xs text-cream/45">{r.client_phone}</div>
                       </td>
                       <td className="px-5 py-4 text-cream/60">
-                        {r.sale_value > 0 ? KES(r.sale_value) : "â€”"}
+                        {r.sale_value > 0 ? KES(r.sale_value) : "-"}
                       </td>
                       <td className="px-5 py-4">
                         <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusColor[r.status] || "text-cream/60 bg-white/5"}`}>
@@ -195,7 +193,7 @@ export default function DashboardClient({
                         </span>
                       </td>
                       <td className="px-5 py-4 text-right font-semibold text-cream">
-                        {r.points_awarded > 0 ? KES(r.points_awarded) : "â€”"}
+                        {r.points_awarded > 0 ? KES(r.points_awarded) : "-"}
                       </td>
                     </tr>
                   ))}
@@ -254,7 +252,7 @@ export default function DashboardClient({
   );
 }
 
-// â”€â”€ Modal shell â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Modal shell ------------------------------------------------------
 function Modal({ children, onClose, title, wide }: any) {
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-navy-900/85 p-4 backdrop-blur-sm">
@@ -269,16 +267,16 @@ function Modal({ children, onClose, title, wide }: any) {
   );
 }
 
-// â”€â”€ Refer modal â€” smart order builder â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Refer modal - smart order builder --------------------------------
 function ReferModal({ onClose, onDone }: any) {
   const [step, setStep] = useState<1 | 2>(1);
   const [client, setClient] = useState({ name: "", phone: "", location: "" });
-  const [qty, setQty] = useState<Quantities>({});
+  const [lines, setLines] = useState<OrderLine[]>([]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
 
-  const { subtotal, commission } = calcOrder(qty);
-  const hasItems = subtotal > 0;
+  const { subtotal, commission } = calcOrder(lines);
+  const hasItems = lines.length > 0;
 
   const input =
     "w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-cream placeholder-cream/35 outline-none transition focus:border-gold/60";
@@ -292,15 +290,23 @@ function ReferModal({ onClose, onDone }: any) {
     setStep(2);
   }
 
+  function addLine(line: OrderLine) {
+    setLines((prev) => [...prev, line]);
+  }
+  function updateQty(key: string, qty: number) {
+    setLines((prev) => prev.map((l) => (l.key === key ? { ...l, qty: Math.max(1, qty) } : l)));
+  }
+  function removeLine(key: string) {
+    setLines((prev) => prev.filter((l) => l.key !== key));
+  }
+
   async function submit() {
     if (!hasItems) { setErr("Add at least one product to the order."); return; }
     setErr("");
     setLoading(true);
 
-    // Build project detail string from selected products
-    const lines = PRODUCTS
-      .filter((p) => (qty[p.id] || 0) > 0)
-      .map((p) => `${p.name} x${qty[p.id]} (${KES(qty[p.id] * p.price)})`)
+    const detail = lines
+      .map((l) => `${l.name} (${l.brand}, ${l.unitLabel}) x${l.qty} (${KES(l.qty * l.unitPrice)})`)
       .join(", ");
 
     const res = await fetch("/api/referrals", {
@@ -309,7 +315,7 @@ function ReferModal({ onClose, onDone }: any) {
       body: JSON.stringify({
         client_name: client.name,
         client_phone: client.phone,
-        project_detail: `Location: ${client.location || "N/A"} | ${lines}`,
+        project_detail: `Location: ${client.location || "N/A"} | ${detail}`,
         est_value: subtotal,
       }),
     });
@@ -345,7 +351,7 @@ function ReferModal({ onClose, onDone }: any) {
             onChange={(e) => setClient({ ...client, location: e.target.value })} />
           {err && <p className="rounded-lg bg-red-500/10 px-4 py-2 text-sm text-red-300">{err}</p>}
           <button onClick={nextStep} className="btn-gold w-full mt-2">
-            Next â€” Build order <ChevronRight className="h-4 w-4" />
+            Next - Build order <ChevronRight className="h-4 w-4" />
           </button>
         </div>
       )}
@@ -353,52 +359,54 @@ function ReferModal({ onClose, onDone }: any) {
       {step === 2 && (
         <div className="mt-6">
           <p className="mb-4 text-sm text-cream/55">
-            Enter quantities for the products your client needs. Prices and your commission calculate automatically.
+            Pick a category, product, brand and measurement, then add it to the order. Prices and your
+            commission calculate automatically. Add as many items as your client needs.
           </p>
 
-          {/* Product table */}
-          <div className="overflow-hidden rounded-xl border border-white/10">
-            {/* Header */}
-            <div className="grid grid-cols-12 gap-2 bg-white/[0.04] px-4 py-2 text-xs font-medium uppercase tracking-wide text-cream/50">
-              <div className="col-span-5">Product</div>
-              <div className="col-span-2 text-right">Unit price</div>
-              <div className="col-span-2 text-center">Qty</div>
-              <div className="col-span-2 text-right">Total</div>
-              <div className="col-span-1 text-right text-gold">%</div>
-            </div>
+          <ProductPicker onAdd={addLine} />
 
-            {/* Rows */}
-            {PRODUCTS.map((p) => {
-              const q = qty[p.id] || 0;
-              const lineTotal = q * p.price;
-              const lineComm = lineTotal * p.rate;
-              return (
-                <div key={p.id} className={`grid grid-cols-12 items-center gap-2 border-t border-white/10 px-4 py-3 transition ${q > 0 ? "bg-gold/[0.04]" : ""}`}>
-                  <div className="col-span-5">
-                    <div className="text-sm font-medium text-cream">{p.name}</div>
-                    <div className="text-xs text-cream/45">{p.unit}</div>
-                  </div>
-                  <div className="col-span-2 text-right text-sm text-cream/60">
-                    {KES(p.price)}
-                  </div>
-                  <div className="col-span-2 flex justify-center">
-                    <input
-                      type="number" min={0} step={1}
-                      value={q || ""}
-                      placeholder="0"
-                      onChange={(e) => setQty({ ...qty, [p.id]: Math.max(0, parseInt(e.target.value) || 0) })}
-                      className="w-16 rounded-lg border border-white/15 bg-white/[0.05] px-2 py-1.5 text-center text-sm text-cream outline-none focus:border-gold/60"
-                    />
-                  </div>
-                  <div className={`col-span-2 text-right text-sm font-semibold ${q > 0 ? "text-cream" : "text-cream/30"}`}>
-                    {q > 0 ? KES(lineTotal) : "â€”"}
-                  </div>
-                  <div className={`col-span-1 text-right text-xs font-bold ${q > 0 ? "text-gold" : "text-cream/20"}`}>
-                    {q > 0 ? `+${KES(lineComm)}` : `${p.rate * 100}%`}
-                  </div>
+          {/* Order lines */}
+          <div className="mt-5">
+            {lines.length === 0 ? (
+              <div className="flex items-center gap-2 rounded-xl border border-dashed border-white/15 px-4 py-6 text-sm text-cream/40">
+                <ShoppingCart className="h-4 w-4" /> No items added yet - use the picker above.
+              </div>
+            ) : (
+              <div className="overflow-hidden rounded-xl border border-white/10">
+                <div className="grid grid-cols-12 gap-2 bg-white/[0.04] px-4 py-2 text-xs font-medium uppercase tracking-wide text-cream/50">
+                  <div className="col-span-5">Item</div>
+                  <div className="col-span-2 text-right">Unit price</div>
+                  <div className="col-span-2 text-center">Qty</div>
+                  <div className="col-span-2 text-right">Total</div>
+                  <div className="col-span-1" />
                 </div>
-              );
-            })}
+                {lines.map((l) => {
+                  const lineTotal = l.qty * l.unitPrice;
+                  return (
+                    <div key={l.key} className="grid grid-cols-12 items-center gap-2 border-t border-white/10 bg-gold/[0.04] px-4 py-3">
+                      <div className="col-span-5">
+                        <div className="text-sm font-medium text-cream">{l.name}</div>
+                        <div className="text-xs text-cream/45">{l.brand} - {l.unitLabel}</div>
+                      </div>
+                      <div className="col-span-2 text-right text-sm text-cream/60">{KES(l.unitPrice)}</div>
+                      <div className="col-span-2 flex justify-center">
+                        <input
+                          type="number" min={1} step={1} value={l.qty}
+                          onChange={(e) => updateQty(l.key, parseInt(e.target.value) || 1)}
+                          className="w-16 rounded-lg border border-white/15 bg-white/[0.05] px-2 py-1.5 text-center text-sm text-cream outline-none focus:border-gold/60"
+                        />
+                      </div>
+                      <div className="col-span-2 text-right text-sm font-semibold text-cream">{KES(lineTotal)}</div>
+                      <div className="col-span-1 text-right">
+                        <button onClick={() => removeLine(l.key)} className="text-red-400/60 hover:text-red-400">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Summary */}
@@ -406,13 +414,13 @@ function ReferModal({ onClose, onDone }: any) {
             <div className="flex items-center justify-between">
               <span className="text-sm text-cream/60">Order subtotal</span>
               <span className={`font-semibold ${hasItems ? "text-cream" : "text-cream/30"}`}>
-                {hasItems ? KES(subtotal) : "â€”"}
+                {hasItems ? KES(subtotal) : "-"}
               </span>
             </div>
             <div className="mt-2 flex items-center justify-between">
               <span className="text-sm text-cream/60">Your commission</span>
               <span className={`font-display text-xl font-semibold ${hasItems ? "gold-text" : "text-cream/30"}`}>
-                {hasItems ? KES(commission) : "â€”"}
+                {hasItems ? KES(commission) : "-"}
               </span>
             </div>
             {hasItems && (
@@ -426,7 +434,7 @@ function ReferModal({ onClose, onDone }: any) {
 
           <div className="mt-5 flex gap-3">
             <button onClick={() => setStep(1)} className="btn-outline flex-1">
-              â† Back
+              Back
             </button>
             <button onClick={submit} disabled={loading || !hasItems} className="btn-gold flex-1 disabled:opacity-40">
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit referral"}
@@ -438,7 +446,96 @@ function ReferModal({ onClose, onDone }: any) {
   );
 }
 
-// â”€â”€ Redeem modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Category > product > brand > unit picker -------------------------
+function ProductPicker({ onAdd }: { onAdd: (line: OrderLine) => void }) {
+  const [category, setCategory] = useState(CATALOG_CATEGORIES[0]);
+  const productsInCategory = CATALOG.filter((c) => c.category === category);
+  const [productId, setProductId] = useState(productsInCategory[0]?.id || "");
+  const product = CATALOG.find((c) => c.id === productId) || productsInCategory[0];
+  const [brand, setBrand] = useState(product?.brands[0] || "");
+  const [unitLabel, setUnitLabel] = useState(product?.units[0]?.label || "");
+  const [qty, setQty] = useState(1);
+
+  const selectCls =
+    "w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm text-cream outline-none transition focus:border-gold/60";
+
+  function onCategoryChange(cat: string) {
+    setCategory(cat);
+    const first = CATALOG.find((c) => c.category === cat);
+    setProductId(first?.id || "");
+    setBrand(first?.brands[0] || "");
+    setUnitLabel(first?.units[0]?.label || "");
+  }
+  function onProductChange(id: string) {
+    setProductId(id);
+    const p = CATALOG.find((c) => c.id === id);
+    setBrand(p?.brands[0] || "");
+    setUnitLabel(p?.units[0]?.label || "");
+  }
+
+  const unit = product?.units.find((u) => u.label === unitLabel) || product?.units[0];
+
+  function handleAdd() {
+    if (!product || !unit) return;
+    onAdd({
+      key: `${product.id}-${brand}-${unit.label}-${Date.now()}`,
+      itemId: product.id,
+      name: product.name,
+      brand,
+      unitLabel: unit.label,
+      unitPrice: unit.price,
+      rate: product.rate,
+      qty: Math.max(1, qty),
+    });
+    setQty(1);
+  }
+
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <div>
+          <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-cream/45">Category</label>
+          <select className={selectCls} value={category} onChange={(e) => onCategoryChange(e.target.value)}>
+            {CATALOG_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-cream/45">Product</label>
+          <select className={selectCls} value={productId} onChange={(e) => onProductChange(e.target.value)}>
+            {productsInCategory.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-cream/45">Brand</label>
+          <select className={selectCls} value={brand} onChange={(e) => setBrand(e.target.value)}>
+            {product?.brands.map((b) => <option key={b} value={b}>{b}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-cream/45">Measurement</label>
+          <select className={selectCls} value={unitLabel} onChange={(e) => setUnitLabel(e.target.value)}>
+            {product?.units.map((u) => <option key={u.label} value={u.label}>{u.label} - {KES(u.price)}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-cream/45">Qty</label>
+          <div className="flex gap-2">
+            <input
+              type="number" min={1} step={1} value={qty}
+              onChange={(e) => setQty(parseInt(e.target.value) || 1)}
+              className={`${selectCls} text-center`}
+            />
+            <button onClick={handleAdd} className="flex shrink-0 items-center gap-1 rounded-lg bg-gold px-3 py-2 text-xs font-semibold text-navy-900 transition hover:bg-gold-light">
+              <Plus className="h-3.5 w-3.5" /> Add
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// -- Redeem modal -------------------------------------------------------
 function RedeemModal({ balance, onClose, onDone }: any) {
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("mpesa");
@@ -491,4 +588,3 @@ function RedeemModal({ balance, onClose, onDone }: any) {
     </Modal>
   );
 }
-

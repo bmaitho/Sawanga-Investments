@@ -159,3 +159,185 @@ export const PARTNERS = [
   { name: "Dura Paints",    note: "Durable everyday finishes",    image: "/images/brand-dura.jpg" },
   { name: "Crown Paints",   note: "Leading East African brand",   image: "/images/brand-crown.jpg" },
 ];
+
+// =====================================================================
+//  ORDER BUILDER CATALOG  (painter portal — "Refer a client")
+//  NOTE: prices below are PLACEHOLDER estimates only, pending the
+//  client's complete price list. Structure (category > product > brand
+//  > unit) is built to be broad and easy to extend once real prices,
+//  brands and unit/measurement options arrive — just edit the arrays
+//  below, no UI changes needed.
+// =====================================================================
+export type CatalogUnit = { label: string; price: number };
+export type CatalogItem = {
+  id: string;
+  category: string;
+  name: string;
+  brands: string[];
+  units: CatalogUnit[];
+  rate: number; // painter commission rate
+};
+
+export const CATALOG: CatalogItem[] = [
+  // ── Paints & Coatings ──────────────────────────────────────────
+  {
+    id: "paint-interior-emulsion", category: "Paints & Coatings", name: "Interior Emulsion",
+    brands: ["Crown", "Dura", "Zouli", "Crystal"],
+    units: [{ label: "20L Tin", price: 4800 }, { label: "10L Tin", price: 2600 }, { label: "4L Tin", price: 1150 }],
+    rate: 0.05,
+  },
+  {
+    id: "paint-exterior-weatherguard", category: "Paints & Coatings", name: "Exterior Weatherguard",
+    brands: ["Crown", "Dura", "Zouli", "Crystal"],
+    units: [{ label: "20L Tin", price: 5800 }, { label: "10L Tin", price: 3100 }, { label: "4L Tin", price: 1350 }],
+    rate: 0.05,
+  },
+  {
+    id: "paint-premium-silk", category: "Paints & Coatings", name: "Premium Silk",
+    brands: ["Crown", "Dura", "Zouli"],
+    units: [{ label: "20L Tin", price: 6200 }, { label: "4L Tin", price: 1450 }],
+    rate: 0.05,
+  },
+  {
+    id: "paint-primer", category: "Paints & Coatings", name: "Primer / Undercoat",
+    brands: ["Crown", "Dura", "Zouli", "Crystal"],
+    units: [{ label: "20L Tin", price: 3200 }, { label: "4L Tin", price: 750 }],
+    rate: 0.05,
+  },
+
+  // ── Wall Master (standalone) ────────────────────────────────────
+  {
+    id: "wall-master", category: "Wall Master", name: "Wall Master (Skim Coat)",
+    brands: ["Crown", "Sadolin", "Generic"],
+    units: [{ label: "40kg Bag", price: 1350 }, { label: "20kg Bag", price: 750 }],
+    rate: 0.05,
+  },
+
+  // ── Putty (standalone) ───────────────────────────────────────────
+  {
+    id: "putty-interior", category: "Putty", name: "Interior Putty",
+    brands: ["Crown", "Sadolin", "Generic"],
+    units: [{ label: "40kg Bag", price: 1250 }, { label: "20kg Bag", price: 700 }],
+    rate: 0.05,
+  },
+  {
+    id: "putty-exterior", category: "Putty", name: "Exterior Putty",
+    brands: ["Crown", "Sadolin", "Generic"],
+    units: [{ label: "40kg Bag", price: 1450 }, { label: "20kg Bag", price: 800 }],
+    rate: 0.05,
+  },
+
+  // ── Tile Adhesives ────────────────────────────────────────────────
+  {
+    id: "tile-adhesive-standard", category: "Tile Adhesives", name: "Standard Tile Adhesive",
+    brands: ["Dunlop", "Bal", "Generic"],
+    units: [{ label: "25kg Bag", price: 980 }, { label: "20kg Bag", price: 820 }],
+    rate: 0.04,
+  },
+  {
+    id: "tile-adhesive-heavyduty", category: "Tile Adhesives", name: "Heavy-Duty Bond",
+    brands: ["Dunlop", "Bal"],
+    units: [{ label: "25kg Bag", price: 1250 }],
+    rate: 0.04,
+  },
+  {
+    id: "tile-adhesive-wetarea", category: "Tile Adhesives", name: "Wet-Area Grade",
+    brands: ["Dunlop", "Bal"],
+    units: [{ label: "25kg Bag", price: 1350 }],
+    rate: 0.04,
+  },
+  {
+    id: "tile-grout", category: "Tile Adhesives", name: "Tile Grout",
+    brands: ["Dunlop", "Bal", "Generic"],
+    units: [{ label: "5kg Bag", price: 420 }, { label: "2kg Bag", price: 180 }],
+    rate: 0.04,
+  },
+
+  // ── Gypsum & Decorative Finishes ────────────────────────────────
+  {
+    id: "gypsum-board", category: "Gypsum & Decorative Finishes", name: "Gypsum Board",
+    brands: ["Knauf", "Gyproc", "Generic"],
+    units: [{ label: "Per Sheet", price: 850 }],
+    rate: 0.03,
+  },
+  {
+    id: "gypsum-cornice", category: "Gypsum & Decorative Finishes", name: "Cornices & Coving",
+    brands: ["Knauf", "Gyproc"],
+    units: [{ label: "Per Metre", price: 350 }],
+    rate: 0.03,
+  },
+  {
+    id: "gypsum-ceiling-grid", category: "Gypsum & Decorative Finishes", name: "Ceiling Systems (Grid)",
+    brands: ["Armstrong", "Generic"],
+    units: [{ label: "Per m²", price: 1200 }],
+    rate: 0.03,
+  },
+  {
+    id: "gypsum-decorative-panel", category: "Gypsum & Decorative Finishes", name: "Decorative Panels",
+    brands: ["Generic"],
+    units: [{ label: "Per Sheet", price: 1800 }],
+    rate: 0.03,
+  },
+
+  // ── Granite & Stone ─────────────────────────────────────────────
+  {
+    id: "granite-countertop", category: "Granite & Stone", name: "Granite Countertop",
+    brands: ["Local Granite", "Imported Granite"],
+    units: [{ label: "Per m²", price: 3500 }],
+    rate: 0.03,
+  },
+  {
+    id: "quartz-countertop", category: "Granite & Stone", name: "Quartz Countertop",
+    brands: ["Caesarstone", "Generic Quartz"],
+    units: [{ label: "Per m²", price: 7500 }],
+    rate: 0.03,
+  },
+  {
+    id: "stone-cladding", category: "Granite & Stone", name: "Natural Stone Cladding",
+    brands: ["Generic"],
+    units: [{ label: "Per m²", price: 2800 }],
+    rate: 0.03,
+  },
+
+  // ── Sanitaryware & Fittings ───────────────────────────────────────
+  {
+    id: "sanitary-wc", category: "Sanitaryware & Fittings", name: "Toilet Suite (WC)",
+    brands: ["Twyford", "RAK", "Generic"],
+    units: [{ label: "Per Unit", price: 12500 }],
+    rate: 0.03,
+  },
+  {
+    id: "sanitary-basin", category: "Sanitaryware & Fittings", name: "Wash Basin",
+    brands: ["Twyford", "RAK", "Generic"],
+    units: [{ label: "Per Unit", price: 6500 }],
+    rate: 0.03,
+  },
+  {
+    id: "sanitary-shower-mixer", category: "Sanitaryware & Fittings", name: "Shower Mixer / Tap",
+    brands: ["Crosswater", "Generic"],
+    units: [{ label: "Per Unit", price: 4500 }],
+    rate: 0.03,
+  },
+  {
+    id: "sanitary-kitchen-mixer", category: "Sanitaryware & Fittings", name: "Kitchen Sink Mixer",
+    brands: ["Crosswater", "Generic"],
+    units: [{ label: "Per Unit", price: 3800 }],
+    rate: 0.03,
+  },
+
+  // ── Doors & Cabinets ──────────────────────────────────────────────
+  {
+    id: "door-interior-flush", category: "Doors & Cabinets", name: "Interior Door (Flush)",
+    brands: ["Generic"],
+    units: [{ label: "Per Unit", price: 8500 }],
+    rate: 0.03,
+  },
+  {
+    id: "cabinet-kitchen-unit", category: "Doors & Cabinets", name: "Kitchen Cabinet Unit",
+    brands: ["Generic"],
+    units: [{ label: "Per Metre Run", price: 15000 }],
+    rate: 0.03,
+  },
+];
+
+export const CATALOG_CATEGORIES = Array.from(new Set(CATALOG.map((c) => c.category)));

@@ -4,7 +4,10 @@ import { useRouter } from "next/navigation";
 import {
   CheckCircle2, XCircle, Clock, Users, Wallet,
   RefreshCw, ChevronDown, ChevronUp, BadgeCheck, LogOut,
+  FileText, BarChart3,
 } from "lucide-react";
+import TransactionsPanel from "./TransactionsPanel";
+import PaymentsTracker from "./PaymentsTracker";
 
 const KES = (n: number) =>
   "KES " + Number(n || 0).toLocaleString("en-KE", { maximumFractionDigits: 0 });
@@ -19,19 +22,25 @@ const statusColor: Record<string, string> = {
 };
 
 type Tab = "referrals" | "painters" | "redemptions";
+type Section = "transactions" | "painter-portal";
+type TxnView = "list" | "tracker";
 
 export default function AdminClient({
-  referrals, painters, redemptions, adminKey,
+  referrals, painters, redemptions, transactions, adminKey,
 }: {
   referrals: any[];
   painters: any[];
   redemptions: any[];
+  transactions: any[];
   adminKey: string;
 }) {
+  const [section, setSection] = useState<Section>("transactions");
+  const [txnView, setTxnView] = useState<TxnView>("list");
   const [tab, setTab] = useState<Tab>("referrals");
   const [loading, setLoading] = useState<string | null>(null);
   const [localReferrals, setLocalReferrals] = useState(referrals);
   const [localRedemptions, setLocalRedemptions] = useState(redemptions);
+  const [localTransactions, setLocalTransactions] = useState(transactions);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
@@ -48,6 +57,7 @@ export default function AdminClient({
       const d = await res.json();
       setLocalReferrals(d.referrals);
       setLocalRedemptions(d.redemptions);
+      setLocalTransactions(d.transactions || []);
     }
     setRefreshing(false);
   }
@@ -113,18 +123,17 @@ export default function AdminClient({
       <div className="absolute inset-0 grid-texture opacity-30 pointer-events-none" />
       <div className="container-luxe relative pb-24">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-4 print:hidden">
           <div>
             <h1 className="font-display text-3xl font-semibold text-cream">
-              SAWANGA <span className="gold-text">Admin</span>
+              SAWANGA <span className="gold-text">{section === "transactions" ? "Transaction Suite" : "Admin"}</span>
             </h1>
-            <p className="mt-1 text-sm text-cream/45">Painter portal management</p>
+            <p className="mt-1 text-sm text-cream/45">
+              {section === "transactions" ? "Quotations · Invoices · Delivery · Payments" : "Painter portal management"}
+            </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <button
-              onClick={handleRefresh}
-              className="btn-outline gap-2"
-            >
+            <button onClick={handleRefresh} className="btn-outline gap-2">
               <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} /> Refresh
             </button>
             <button
@@ -136,6 +145,63 @@ export default function AdminClient({
           </div>
         </div>
 
+        {/* Section switcher */}
+        <div className="mt-6 inline-flex rounded-2xl border border-white/10 bg-white/[0.03] p-1 print:hidden">
+          <button
+            onClick={() => setSection("transactions")}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition ${
+              section === "transactions" ? "bg-gold text-navy-900" : "text-cream/55 hover:text-cream"
+            }`}
+          >
+            <FileText className="h-4 w-4" /> Transaction Suite
+          </button>
+          <button
+            onClick={() => setSection("painter-portal")}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition ${
+              section === "painter-portal" ? "bg-gold text-navy-900" : "text-cream/55 hover:text-cream"
+            }`}
+          >
+            <Users className="h-4 w-4" /> Painter Portal
+          </button>
+        </div>
+
+        {/* ══════════════════ TRANSACTION SUITE ══════════════════ */}
+        {section === "transactions" && (
+          <div className="mt-6">
+            <div className="flex gap-2 border-b border-white/10 print:hidden">
+              <button
+                onClick={() => setTxnView("list")}
+                className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition ${
+                  txnView === "list" ? "border-gold text-cream" : "border-transparent text-cream/45 hover:text-cream/70"
+                }`}
+              >
+                <FileText className="h-4 w-4" /> Transactions
+              </button>
+              <button
+                onClick={() => setTxnView("tracker")}
+                className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition ${
+                  txnView === "tracker" ? "border-gold text-cream" : "border-transparent text-cream/45 hover:text-cream/70"
+                }`}
+              >
+                <BarChart3 className="h-4 w-4" /> Payments Tracker
+              </button>
+            </div>
+
+            {txnView === "list" ? (
+              <TransactionsPanel
+                transactions={localTransactions}
+                adminKey={adminKey}
+                onRefresh={handleRefresh}
+              />
+            ) : (
+              <PaymentsTracker transactions={localTransactions} />
+            )}
+          </div>
+        )}
+
+        {/* ══════════════════ PAINTER PORTAL (existing) ══════════════════ */}
+        {section === "painter-portal" && (
+        <>
         {/* Summary cards */}
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
           {[
@@ -344,6 +410,8 @@ export default function AdminClient({
               </div>
             ))}
           </div>
+        )}
+        </>
         )}
       </div>
     </div>
