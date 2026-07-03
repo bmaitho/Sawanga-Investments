@@ -471,7 +471,7 @@ function RedeemModal({ balance, onClose, onDone }: any) {
           onChange={(e) => setAmount(e.target.value)} />
         <div>
           <p className="mb-2 text-sm text-cream/55">Payout method</p>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             {["mpesa", "bank", "credit"].map((m) => (
               <button key={m} onClick={() => setMethod(m)}
                 className={`flex-1 rounded-xl border px-3 py-2 text-sm capitalize transition ${

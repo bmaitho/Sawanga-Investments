@@ -120,7 +120,7 @@ export default function AdminClient({
             </h1>
             <p className="mt-1 text-sm text-cream/45">Painter portal management</p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <button
               onClick={handleRefresh}
               className="btn-outline gap-2"
