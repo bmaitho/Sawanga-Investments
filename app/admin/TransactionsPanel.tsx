@@ -353,7 +353,7 @@ function TransactionDetail({
           <DocumentForm
             draft={draft} setField={setField} items={items} setItem={setItem}
             addRow={addRow} removeRow={removeRow} totals={totals}
-            readOnly={!editableQuote} title="QUOTATION" docRef={transaction.ref}
+            readOnly={false} title="QUOTATION" docRef={transaction.ref}
           />
         )}
         {subTab === "invoice" && (
@@ -377,7 +377,7 @@ function TransactionDetail({
         )}
       </div>
 
-      {((subTab === "quotation" && editableQuote) || subTab === "delivery") ? (
+      {(subTab === "quotation" || subTab === "delivery") ? (
         <div className="flex justify-end border-t border-white/10 px-6 py-4 print:hidden">
           <button onClick={save} disabled={saving} className="btn-gold px-6 py-2.5 text-sm">
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save changes"}
