@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState } from "react";
 import {
   Plus, Printer, Trash2, ChevronRight, Loader2, X, CheckCircle2, Wallet,
 } from "lucide-react";
@@ -32,19 +32,8 @@ export default function TransactionsPanel({
   const [subTab, setSubTab] = useState<SubTab>("quotation");
   const [showNew, setShowNew] = useState(false);
   const [busy, setBusy] = useState(false);
-  const detailRef = useRef<HTMLDivElement | null>(null);
 
   const selected = transactions.find((t) => t.id === selectedId) || null;
-
-  function selectTransaction(id: string) {
-    setSelectedId(id);
-    setSubTab("quotation");
-    // On mobile the list sits above the detail panel in the stacked layout —
-    // jump the user down to it instead of leaving them to scroll manually.
-    if (typeof window !== "undefined" && window.innerWidth < 1024) {
-      detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }
 
   async function createTransaction(fields: Partial<Transaction>) {
     setBusy(true);
@@ -92,7 +81,7 @@ export default function TransactionsPanel({
             return (
               <button
                 key={t.id}
-                onClick={() => selectTransaction(t.id!)}
+                onClick={() => { setSelectedId(t.id!); setSubTab("quotation"); }}
                 className={`block w-full px-5 py-4 text-left transition hover:bg-white/[0.04] ${
                   selectedId === t.id ? "bg-white/[0.06]" : ""
                 }`}
@@ -118,7 +107,7 @@ export default function TransactionsPanel({
       </div>
 
       {/* ── DETAIL ───────────────────────────────────────────── */}
-      <div ref={detailRef} className="card-luxe overflow-hidden scroll-mt-4">
+      <div className="card-luxe overflow-hidden">
         {!selected ? (
           <div className="flex h-full min-h-[400px] items-center justify-center p-10 text-center text-cream/45">
             Select a transaction, or create a new one to get started.
@@ -158,7 +147,7 @@ function NewTransactionModal({ onClose, onCreate, busy }: any) {
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-navy-900/85 p-4 backdrop-blur-sm">
-      <div className="card-luxe relative max-h-[90vh] w-full max-w-lg overflow-y-auto border-gold/25 bg-[#0d1f4a] p-6 md:p-8">
+      <div className="card-luxe relative w-full max-w-lg border-gold/25 bg-[#0d1f4a] p-6 md:p-8">
         <button onClick={onClose} className="absolute right-5 top-5 text-cream/50 hover:text-gold">
           <X className="h-5 w-5" />
         </button>
@@ -190,7 +179,7 @@ function NewTransactionModal({ onClose, onCreate, busy }: any) {
           </div>
           <div>
             <label className={labelCls}>Prepared by</label>
-            <select className={inputCls} value={f.account_manager} onChange={(e) => set("account_manager", e.target.value)}>
+            <select style={{ colorScheme: "dark" }} className={inputCls} value={f.account_manager} onChange={(e) => set("account_manager", e.target.value)}>
               {ACCOUNT_MANAGERS.map((m) => <option key={m} value={m}>{m}</option>)}
             </select>
           </div>
@@ -339,16 +328,14 @@ function TransactionDetail({
         </div>
       </div>
 
-      {/* Sub tabs — horizontally scrollable so every tab stays reachable on
-          narrow screens (the detail card above this clips overflow, so
-          without this the Payments tab could be pushed off-screen). */}
-      <div className="flex gap-1 overflow-x-auto border-b border-white/10 px-4 pt-3 sm:px-6 print:hidden">
+      {/* Sub tabs */}
+      <div className="flex gap-1 border-b border-white/10 px-6 pt-3 print:hidden">
         {tabs.map((t) => (
           <button
             key={t.id}
             disabled={!t.enabled}
             onClick={() => setSubTab(t.id)}
-            className={`shrink-0 whitespace-nowrap rounded-t-lg px-3 py-2.5 text-sm font-medium transition sm:px-4 ${
+            className={`rounded-t-lg px-4 py-2.5 text-sm font-medium transition ${
               subTab === t.id
                 ? "border border-b-0 border-gold/30 bg-white/[0.05] text-cream"
                 : t.enabled
@@ -450,7 +437,7 @@ function DocumentForm({
           <Field label="Valid (days)" type="number" value={draft.valid_days} onChange={(v: string) => setField("valid_days", Number(v))} readOnly={readOnly} />
           <div>
             <label className={labelCls}>Prepared by</label>
-            <select disabled={readOnly} className={inputCls} value={draft.account_manager || ""} onChange={(e) => setField("account_manager", e.target.value)}>
+            <select style={{ colorScheme: "dark" }} disabled={readOnly} className={inputCls} value={draft.account_manager || ""} onChange={(e) => setField("account_manager", e.target.value)}>
               <option value="">—</option>
               {ACCOUNT_MANAGERS.map((m) => <option key={m} value={m}>{m}</option>)}
             </select>
@@ -515,7 +502,7 @@ function DocumentForm({
                       onChange={(e) => setItem(i, { qty: Number(e.target.value) })} />
                   </td>
                   <td className="px-3 py-2">
-                    <select disabled={readOnly} className={inputCls} value={it.unit}
+                    <select style={{ colorScheme: "dark" }} disabled={readOnly} className={inputCls} value={it.unit}
                       onChange={(e) => setItem(i, { unit: e.target.value })}>
                       {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
                     </select>
@@ -624,7 +611,7 @@ function DeliveryNoteForm({ draft, setField, items, setItem, transactionRef }: a
                     onChange={(e) => setItem(i, { qty_delivered: Number(e.target.value) })} placeholder={String(it.qty)} />
                 </td>
                 <td className="px-3 py-2">
-                  <select className={inputCls} value={it.condition || ""} onChange={(e) => setItem(i, { condition: e.target.value })}>
+                  <select style={{ colorScheme: "dark" }} className={inputCls} value={it.condition || ""} onChange={(e) => setItem(i, { condition: e.target.value })}>
                     <option value="">—</option>
                     <option value="Good">Good</option>
                     <option value="Damaged">Damaged</option>
@@ -707,7 +694,7 @@ function PaymentsTab({ transaction, adminKey, onRefresh, total, balanceDue, paym
         <p className="mb-3 text-sm font-semibold text-cream">Record a payment</p>
         <div className="grid gap-3 sm:grid-cols-4">
           <input type="number" placeholder="Amount (KES)" value={amount} onChange={(e) => setAmount(e.target.value)} className={inputCls} />
-          <select value={method} onChange={(e) => setMethod(e.target.value)} className={inputCls}>
+          <select style={{ colorScheme: "dark" }} value={method} onChange={(e) => setMethod(e.target.value)} className={inputCls}>
             {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m === "mpesa" ? "M-Pesa" : m}</option>)}
           </select>
           <input placeholder="Note (optional)" value={note} onChange={(e) => setNote(e.target.value)} className={`${inputCls} sm:col-span-1`} />

@@ -21,6 +21,43 @@ const statusColor: Record<string, string> = {
   processing:"text-sky-400 bg-sky-400/10 border-sky-400/20",
 };
 
+// Referral order details are stored as one flattened string (see
+// DashboardClient's ReferModal), e.g.
+//   "Location: Karen ~ Paints & Coatings (Crown, 20 Ltr bucket) x5 (KES 24,000) [Note: white]"
+// Newer submissions separate items with " ~ "; older ones used ", " (which
+// breaks if a note contains a comma). Parse best-effort into a structured
+// list for display; fall back to the raw string if it doesn't match.
+type ParsedOrderItem = { name: string; brand: string; unit: string; qty: string; total: string; note?: string; raw?: string };
+type ParsedOrderDetail = { location: string | null; items: ParsedOrderItem[] } | null;
+
+const ITEM_RE = /^(.+?) \((.+?),\s*(.+?)\)\s*x(\d+)\s*\((KES[\d,\s]*)\)(?:\s*\[Note:\s*(.*?)\])?$/;
+
+function parseOrderDetail(raw: string): ParsedOrderDetail {
+  if (!raw) return null;
+  let location: string | null = null;
+  let rest = raw;
+  const locMatch = raw.match(/^Location:\s*([^|~]*)[|~]\s*(.*)$/s);
+  if (locMatch) {
+    location = locMatch[1].trim();
+    rest = locMatch[2].trim();
+  }
+  if (!rest) return { location, items: [] };
+
+  const tryParse = (chunks: string[]): ParsedOrderItem[] =>
+    chunks.map((c) => {
+      const m = c.trim().match(ITEM_RE);
+      if (!m) return { raw: c.trim() } as ParsedOrderItem;
+      const [, name, brand, unit, qty, total, note] = m;
+      return { name, brand, unit, qty, total, note: note || undefined };
+    });
+
+  // Prefer the newer " ~ " delimiter; only fall back to the comma-based
+  // split (used by older referrals) if there's no "~" in the string at all.
+  const chunks = rest.includes(" ~ ") ? rest.split(" ~ ") : rest.split(", ");
+  const items = tryParse(chunks);
+  return { location, items };
+}
+
 type Tab = "referrals" | "painters" | "redemptions";
 type Section = "transactions" | "painter-portal";
 type TxnView = "list" | "tracker";
@@ -119,7 +156,7 @@ export default function AdminClient({
   ];
 
   return (
-    <div className="min-h-screen bg-navy-900 pt-8">
+    <div className="min-h-screen bg-navy-900 pt-28">
       <div className="absolute inset-0 grid-texture opacity-30 pointer-events-none" />
       <div className="container-luxe relative pb-24">
         {/* Header */}
@@ -313,12 +350,55 @@ export default function AdminClient({
                   </div>
 
                   {/* Expanded detail */}
-                  {isExpanded && r.project_detail && (
-                    <div className="border-t border-white/8 bg-white/[0.02] px-5 py-4">
-                      <p className="text-xs font-medium uppercase tracking-wide text-cream/40">Order detail</p>
-                      <p className="mt-2 text-sm leading-relaxed text-cream/70">{r.project_detail}</p>
-                    </div>
-                  )}
+                  {isExpanded && r.project_detail && (() => {
+                    const parsed = parseOrderDetail(r.project_detail);
+                    if (!parsed || parsed.items.length === 0) {
+                      return (
+                        <div className="border-t border-white/8 bg-white/[0.02] px-5 py-4">
+                          <p className="text-xs font-medium uppercase tracking-wide text-cream/40">Order detail</p>
+                          <p className="mt-2 text-sm leading-relaxed text-cream/70">{r.project_detail}</p>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="border-t border-white/8 bg-white/[0.02] px-5 py-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="text-xs font-medium uppercase tracking-wide text-cream/40">Order detail</p>
+                          {parsed.location && (
+                            <p className="text-xs text-cream/50">
+                              Site location: <span className="font-medium text-cream/75">{parsed.location}</span>
+                            </p>
+                          )}
+                        </div>
+                        <div className="mt-3 overflow-hidden rounded-xl border border-white/10">
+                          {parsed.items.map((it, i) => (
+                            <div
+                              key={i}
+                              className={`px-4 py-2.5 ${i > 0 ? "border-t border-white/8" : ""}`}
+                            >
+                              {it.raw ? (
+                                <p className="text-sm text-cream/70">{it.raw}</p>
+                              ) : (
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <div>
+                                    <span className="text-sm font-medium text-cream">{it.name}</span>
+                                    <span className="ml-2 text-xs text-cream/45">{it.brand} · {it.unit}</span>
+                                  </div>
+                                  <div className="text-right">
+                                    <span className="text-sm text-cream/60">x{it.qty}</span>
+                                    <span className="ml-3 text-sm font-semibold text-cream">{it.total}</span>
+                                  </div>
+                                </div>
+                              )}
+                              {it.note && (
+                                <p className="mt-1 text-xs italic text-gold/70">Note: {it.note}</p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               );
             })}

@@ -31,7 +31,17 @@ type OrderLine = {
   unitPrice: number;
   rate: number;
   qty: number;
+  note?: string;
 };
+
+// Shared styling so every native <select> in this file stays legible.
+// Without this, some browsers render the dropdown's option list using the
+// OS's light theme regardless of the closed control's dark styling — white
+// text on a white background. `colorScheme: dark` tells the browser to
+// render its native UI (including the option popover) in dark colors, and
+// the per-<option> style is a fallback for browsers that ignore colorScheme.
+const selectDarkStyle = { colorScheme: "dark" as const };
+const optionDarkStyle = { backgroundColor: "#0d1f4a", color: "#f3f0e8" };
 
 function calcOrder(lines: OrderLine[]) {
   let subtotal = 0;
@@ -287,6 +297,9 @@ function ReferModal({ onClose, onDone }: any) {
   function updateQty(key: string, qty: number) {
     setLines((prev) => prev.map((l) => (l.key === key ? { ...l, qty: Math.max(1, qty) } : l)));
   }
+  function updateNote(key: string, note: string) {
+    setLines((prev) => prev.map((l) => (l.key === key ? { ...l, note } : l)));
+  }
   function removeLine(key: string) {
     setLines((prev) => prev.filter((l) => l.key !== key));
   }
@@ -297,9 +310,15 @@ function ReferModal({ onClose, onDone }: any) {
     setErr("");
     setLoading(true);
 
+    // " ~ " (rather than ", ") separates items so a comma typed inside a
+    // free-text note can't be mistaken for a new item when admin parses
+    // this back out for display.
     const detail = lines
-      .map((l) => `${l.name} (${l.brand}, ${l.unitLabel}) x${l.qty} (${KES(l.qty * l.unitPrice)})`)
-      .join(", ");
+      .map((l) => {
+        const base = `${l.name} (${l.brand}, ${l.unitLabel}) x${l.qty} (${KES(l.qty * l.unitPrice)})`;
+        return l.note ? `${base} [Note: ${l.note}]` : base;
+      })
+      .join(" ~ ");
 
     const res = await fetch("/api/referrals", {
       method: "POST",
@@ -355,25 +374,33 @@ function ReferModal({ onClose, onDone }: any) {
                 {lines.map((l) => {
                   const lineTotal = l.qty * l.unitPrice;
                   return (
-                    <div key={l.key} className="grid grid-cols-12 items-center gap-2 border-t border-white/10 bg-gold/[0.04] px-4 py-3">
-                      <div className="col-span-5">
-                        <div className="text-sm font-medium text-cream">{l.name}</div>
-                        <div className="text-xs text-cream/45">{l.brand} - {l.unitLabel}</div>
+                    <div key={l.key} className="border-t border-white/10 bg-gold/[0.04] px-4 py-3">
+                      <div className="grid grid-cols-12 items-center gap-2">
+                        <div className="col-span-5">
+                          <div className="text-sm font-medium text-cream">{l.name}</div>
+                          <div className="text-xs text-cream/45">{l.brand} - {l.unitLabel}</div>
+                        </div>
+                        <div className="col-span-2 text-right text-sm text-cream/60">{KES(l.unitPrice)}</div>
+                        <div className="col-span-2 flex justify-center">
+                          <input
+                            type="number" min={1} step={1} value={l.qty}
+                            onChange={(e) => updateQty(l.key, parseInt(e.target.value) || 1)}
+                            className="w-16 rounded-lg border border-white/15 bg-white/[0.05] px-2 py-1.5 text-center text-sm text-cream outline-none focus:border-gold/60"
+                          />
+                        </div>
+                        <div className="col-span-2 text-right text-sm font-semibold text-cream">{KES(lineTotal)}</div>
+                        <div className="col-span-1 text-right">
+                          <button onClick={() => removeLine(l.key)} title="Remove item" className="text-red-400/60 hover:text-red-400">
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
                       </div>
-                      <div className="col-span-2 text-right text-sm text-cream/60">{KES(l.unitPrice)}</div>
-                      <div className="col-span-2 flex justify-center">
-                        <input
-                          type="number" min={1} step={1} value={l.qty}
-                          onChange={(e) => updateQty(l.key, parseInt(e.target.value) || 1)}
-                          className="w-16 rounded-lg border border-white/15 bg-white/[0.05] px-2 py-1.5 text-center text-sm text-cream outline-none focus:border-gold/60"
-                        />
-                      </div>
-                      <div className="col-span-2 text-right text-sm font-semibold text-cream">{KES(lineTotal)}</div>
-                      <div className="col-span-1 text-right">
-                        <button onClick={() => removeLine(l.key)} className="text-red-400/60 hover:text-red-400">
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
+                      <input
+                        placeholder="Add a note or spec for this item (optional) — e.g. colour, floor number"
+                        value={l.note || ""}
+                        onChange={(e) => updateNote(l.key, e.target.value)}
+                        className="mt-2 w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-cream placeholder-cream/30 outline-none transition focus:border-gold/60"
+                      />
                     </div>
                   );
                 })}
@@ -478,45 +505,72 @@ function ProductPicker({ onAdd }: { onAdd: (line: OrderLine) => void }) {
 
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      {/* Two-per-row layout throughout (rather than cramming 5 fields onto
+          one line on desktop) so every field stays comfortably tappable
+          on mobile too, and the picker never needs to squeeze. */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-cream/45">Category</label>
-          <select className={selectCls} value={category} onChange={(e) => onCategoryChange(e.target.value)}>
-            {CATALOG_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+          <select
+            className={selectCls}
+            style={selectDarkStyle}
+            value={category}
+            onChange={(e) => onCategoryChange(e.target.value)}
+          >
+            {CATALOG_CATEGORIES.map((c) => <option key={c} value={c} style={optionDarkStyle}>{c}</option>)}
           </select>
         </div>
         <div>
           <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-cream/45">Product</label>
-          <select className={selectCls} value={productId} onChange={(e) => onProductChange(e.target.value)}>
-            {productsInCategory.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          <select
+            className={selectCls}
+            style={selectDarkStyle}
+            value={productId}
+            onChange={(e) => onProductChange(e.target.value)}
+          >
+            {productsInCategory.map((p) => <option key={p.id} value={p.id} style={optionDarkStyle}>{p.name}</option>)}
           </select>
         </div>
         <div>
           <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-cream/45">Brand</label>
-          <select className={selectCls} value={brand} onChange={(e) => setBrand(e.target.value)}>
-            {product?.brands.map((b) => <option key={b} value={b}>{b}</option>)}
+          <select
+            className={selectCls}
+            style={selectDarkStyle}
+            value={brand}
+            onChange={(e) => setBrand(e.target.value)}
+          >
+            {product?.brands.map((b) => <option key={b} value={b} style={optionDarkStyle}>{b}</option>)}
           </select>
         </div>
         <div>
           <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-cream/45">Measurement</label>
-          <select className={selectCls} value={unit?.label || ""} onChange={(e) => setUnitLabel(e.target.value)}>
+          <select
+            className={selectCls}
+            style={selectDarkStyle}
+            value={unit?.label || ""}
+            onChange={(e) => setUnitLabel(e.target.value)}
+          >
             {unitsForBrand.map((u) => (
-              <option key={u.label} value={u.label}>{u.label} - {KES(u.prices[brand])}</option>
+              <option key={u.label} value={u.label} style={optionDarkStyle}>{u.label} - {KES(u.prices[brand])}</option>
             ))}
           </select>
         </div>
-        <div>
-          <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-cream/45">Qty</label>
-          <div className="flex gap-2">
+        <div className="sm:col-span-2 sm:grid sm:grid-cols-[1fr_auto] sm:items-end sm:gap-3">
+          <div>
+            <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-cream/45">Qty</label>
             <input
               type="number" min={1} step={1} value={qty}
               onChange={(e) => setQty(parseInt(e.target.value) || 1)}
               className={`${selectCls} text-center`}
             />
-            <button onClick={handleAdd} disabled={unitPrice === undefined} className="flex shrink-0 items-center gap-1 rounded-lg bg-gold px-3 py-2 text-xs font-semibold text-navy-900 transition hover:bg-gold-light disabled:cursor-not-allowed disabled:opacity-40">
-              <Plus className="h-3.5 w-3.5" /> Add
-            </button>
           </div>
+          <button
+            onClick={handleAdd}
+            disabled={unitPrice === undefined}
+            className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg bg-gold px-5 py-2.5 text-sm font-semibold text-navy-900 transition hover:bg-gold-light disabled:cursor-not-allowed disabled:opacity-40 sm:mt-0 sm:w-auto"
+          >
+            <Plus className="h-4 w-4" /> Add to order
+          </button>
         </div>
       </div>
       {product && !product.verified && (

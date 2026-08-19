@@ -109,13 +109,13 @@ export default function PaymentsTracker({ transactions }: { transactions: Transa
           onChange={(e) => setSearch(e.target.value)}
           className={`${inputCls} flex-1 min-w-[200px]`}
         />
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={inputCls}>
+        <select style={{ colorScheme: "dark" }} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={inputCls}>
           <option value="all">All statuses</option>
           <option value="current">Current</option>
           <option value="amber">15+ Days</option>
           <option value="red">30+ Days</option>
         </select>
-        <select value={managerFilter} onChange={(e) => setManagerFilter(e.target.value)} className={inputCls}>
+        <select style={{ colorScheme: "dark" }} value={managerFilter} onChange={(e) => setManagerFilter(e.target.value)} className={inputCls}>
           <option value="all">All managers</option>
           {ACCOUNT_MANAGERS.map((m) => <option key={m} value={m}>{m}</option>)}
         </select>
