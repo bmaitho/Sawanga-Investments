@@ -38,7 +38,7 @@ export default function AboutPage() {
               </h2>
               <div className="mt-6 space-y-4 leading-relaxed text-cream/70">
                 <p>SAWANGA Investment Limited is a Kenyan building finishes company based at Kitengela Plaza, serving clients across Nairobi and beyond.</p>
-                <p>From paints and putty to tiles, gypsum, granite and sanitaryware, we bring together a complete finishing range under one trusted partner.</p>
+                <p>From paints and wall master to putty, tiles, gypsum, granite and sanitaryware, we bring together a complete finishing range under one trusted partner.</p>
                 <p>Quality finishing products, reliable supply, and lasting value. Finishes that build trust.</p>
               </div>
               <div className="mt-8 flex flex-wrap gap-4">

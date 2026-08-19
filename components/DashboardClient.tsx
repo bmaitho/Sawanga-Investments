@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Wallet, Users, Clock, CheckCircle2, Copy,
-  LogOut, Plus, Loader2, Share2, X, ChevronRight, Trash2, ShoppingCart,
+  LogOut, Plus, Loader2, Share2, X, Trash2, ShoppingCart,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Logo } from "@/components/Logo";
@@ -267,9 +267,8 @@ function Modal({ children, onClose, title, wide }: any) {
   );
 }
 
-// -- Refer modal - smart order builder --------------------------------
+// -- Refer modal - single-page order builder ---------------------------
 function ReferModal({ onClose, onDone }: any) {
-  const [step, setStep] = useState<1 | 2>(1);
   const [client, setClient] = useState({ name: "", phone: "", location: "" });
   const [lines, setLines] = useState<OrderLine[]>([]);
   const [loading, setLoading] = useState(false);
@@ -277,18 +276,10 @@ function ReferModal({ onClose, onDone }: any) {
 
   const { subtotal, commission } = calcOrder(lines);
   const hasItems = lines.length > 0;
+  const hasClient = !!(client.name && client.phone);
 
   const input =
     "w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-cream placeholder-cream/35 outline-none transition focus:border-gold/60";
-
-  function nextStep() {
-    if (!client.name || !client.phone) {
-      setErr("Client name and phone are required.");
-      return;
-    }
-    setErr("");
-    setStep(2);
-  }
 
   function addLine(line: OrderLine) {
     setLines((prev) => [...prev, line]);
@@ -301,6 +292,7 @@ function ReferModal({ onClose, onDone }: any) {
   }
 
   async function submit() {
+    if (!hasClient) { setErr("Client name and phone are required."); return; }
     if (!hasItems) { setErr("Add at least one product to the order."); return; }
     setErr("");
     setLoading(true);
@@ -326,53 +318,33 @@ function ReferModal({ onClose, onDone }: any) {
 
   return (
     <Modal onClose={onClose} title="Refer a client" wide>
-      {/* Step indicator */}
-      <div className="mt-4 flex items-center gap-2">
-        {[1, 2].map((s) => (
-          <div key={s} className="flex items-center gap-2">
-            <div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition ${step >= s ? "bg-gold text-navy-900" : "bg-white/10 text-cream/40"}`}>
-              {s}
-            </div>
-            <span className={`text-sm ${step >= s ? "text-cream" : "text-cream/40"}`}>
-              {s === 1 ? "Client details" : "Order & commission"}
-            </span>
-            {s < 2 && <ChevronRight className="h-4 w-4 text-cream/30" />}
-          </div>
-        ))}
+      <p className="mt-2 text-sm text-cream/55">
+        Fill in the client&apos;s details and build their order below, then submit once. Prices and
+        your commission calculate automatically as you add items.
+      </p>
+
+      {/* Client details - always visible, no separate step */}
+      <div className="mt-5 grid gap-3 sm:grid-cols-3">
+        <input className={input} placeholder="Client name *" value={client.name}
+          onChange={(e) => setClient({ ...client, name: e.target.value })} />
+        <input className={input} placeholder="Client phone *" value={client.phone}
+          onChange={(e) => setClient({ ...client, phone: e.target.value })} />
+        <input className={input} placeholder="Site location / county" value={client.location}
+          onChange={(e) => setClient({ ...client, location: e.target.value })} />
       </div>
 
-      {step === 1 && (
-        <div className="mt-6 space-y-4">
-          <input className={input} placeholder="Client name *" value={client.name}
-            onChange={(e) => setClient({ ...client, name: e.target.value })} />
-          <input className={input} placeholder="Client phone *" value={client.phone}
-            onChange={(e) => setClient({ ...client, phone: e.target.value })} />
-          <input className={input} placeholder="Site location / county (optional)" value={client.location}
-            onChange={(e) => setClient({ ...client, location: e.target.value })} />
-          {err && <p className="rounded-lg bg-red-500/10 px-4 py-2 text-sm text-red-300">{err}</p>}
-          <button onClick={nextStep} className="btn-gold w-full mt-2">
-            Next - Build order <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
-      )}
+      {/* Order builder - available immediately, submit validates both sections together */}
+      <div className="mt-6">
+        <ProductPicker onAdd={addLine} />
 
-      {step === 2 && (
-        <div className="mt-6">
-          <p className="mb-4 text-sm text-cream/55">
-            Pick a category, product, brand and measurement, then add it to the order. Prices and your
-            commission calculate automatically. Add as many items as your client needs.
-          </p>
-
-          <ProductPicker onAdd={addLine} />
-
-          {/* Order lines */}
-          <div className="mt-5">
-            {lines.length === 0 ? (
-              <div className="flex items-center gap-2 rounded-xl border border-dashed border-white/15 px-4 py-6 text-sm text-cream/40">
-                <ShoppingCart className="h-4 w-4" /> No items added yet - use the picker above.
-              </div>
-            ) : (
-              <div className="overflow-hidden rounded-xl border border-white/10">
+        <div className="mt-5">
+          {lines.length === 0 ? (
+            <div className="flex items-center gap-2 rounded-xl border border-dashed border-white/15 px-4 py-6 text-sm text-cream/40">
+              <ShoppingCart className="h-4 w-4" /> No items added yet - use the picker above.
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-xl border border-white/10">
+              <div className="min-w-[520px]">
                 <div className="grid grid-cols-12 gap-2 bg-white/[0.04] px-4 py-2 text-xs font-medium uppercase tracking-wide text-cream/50">
                   <div className="col-span-5">Item</div>
                   <div className="col-span-2 text-right">Unit price</div>
@@ -406,42 +378,49 @@ function ReferModal({ onClose, onDone }: any) {
                   );
                 })}
               </div>
-            )}
-          </div>
-
-          {/* Summary */}
-          <div className={`mt-4 rounded-xl border p-5 transition ${hasItems ? "border-gold/30 bg-gold/[0.06]" : "border-white/10 bg-white/[0.02]"}`}>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-cream/60">Order subtotal</span>
-              <span className={`font-semibold ${hasItems ? "text-cream" : "text-cream/30"}`}>
-                {hasItems ? KES(subtotal) : "-"}
-              </span>
             </div>
-            <div className="mt-2 flex items-center justify-between">
-              <span className="text-sm text-cream/60">Your commission</span>
-              <span className={`font-display text-xl font-semibold ${hasItems ? "gold-text" : "text-cream/30"}`}>
-                {hasItems ? KES(commission) : "-"}
-              </span>
-            </div>
-            {hasItems && (
-              <p className="mt-2 text-xs text-cream/45">
-                Commission is credited once SAWANGA confirms the order.
-              </p>
-            )}
-          </div>
-
-          {err && <p className="mt-3 rounded-lg bg-red-500/10 px-4 py-2 text-sm text-red-300">{err}</p>}
-
-          <div className="mt-5 flex gap-3">
-            <button onClick={() => setStep(1)} className="btn-outline flex-1">
-              Back
-            </button>
-            <button onClick={submit} disabled={loading || !hasItems} className="btn-gold flex-1 disabled:opacity-40">
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit referral"}
-            </button>
-          </div>
+          )}
         </div>
-      )}
+
+        {/* Summary */}
+        <div className={`mt-4 rounded-xl border p-5 transition ${hasItems ? "border-gold/30 bg-gold/[0.06]" : "border-white/10 bg-white/[0.02]"}`}>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-cream/60">Order subtotal</span>
+            <span className={`font-semibold ${hasItems ? "text-cream" : "text-cream/30"}`}>
+              {hasItems ? KES(subtotal) : "-"}
+            </span>
+          </div>
+          <div className="mt-2 flex items-center justify-between">
+            <span className="text-sm text-cream/60">Your commission</span>
+            <span className={`font-display text-xl font-semibold ${hasItems ? "gold-text" : "text-cream/30"}`}>
+              {hasItems ? KES(commission) : "-"}
+            </span>
+          </div>
+          {hasItems && (
+            <p className="mt-2 text-xs text-cream/45">
+              Commission is credited once SAWANGA confirms the order.
+            </p>
+          )}
+        </div>
+
+        {err && <p className="mt-3 rounded-lg bg-red-500/10 px-4 py-2 text-sm text-red-300">{err}</p>}
+
+        <button
+          onClick={submit}
+          disabled={loading || !hasClient || !hasItems}
+          className="btn-gold mt-5 w-full justify-center disabled:opacity-40"
+        >
+          {loading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : !hasClient ? (
+            "Add client details to continue"
+          ) : !hasItems ? (
+            "Add at least one item to continue"
+          ) : (
+            "Submit referral"
+          )}
+        </button>
+      </div>
     </Modal>
   );
 }
@@ -455,6 +434,12 @@ function ProductPicker({ onAdd }: { onAdd: (line: OrderLine) => void }) {
   const [brand, setBrand] = useState(product?.brands[0] || "");
   const [unitLabel, setUnitLabel] = useState(product?.units[0]?.label || "");
   const [qty, setQty] = useState(1);
+
+  // Pack sizes/shades are not stocked in every brand, so the measurement list
+  // and the price both depend on the brand currently selected.
+  const unitsForBrand = (product?.units || []).filter(
+    (u) => u.prices[brand] !== undefined
+  );
 
   const selectCls =
     "w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm text-cream outline-none transition focus:border-gold/60";
@@ -473,17 +458,18 @@ function ProductPicker({ onAdd }: { onAdd: (line: OrderLine) => void }) {
     setUnitLabel(p?.units[0]?.label || "");
   }
 
-  const unit = product?.units.find((u) => u.label === unitLabel) || product?.units[0];
+  const unit = unitsForBrand.find((u) => u.label === unitLabel) || unitsForBrand[0];
+  const unitPrice = unit ? unit.prices[brand] : undefined;
 
   function handleAdd() {
-    if (!product || !unit) return;
+    if (!product || !unit || unitPrice === undefined) return;
     onAdd({
       key: `${product.id}-${brand}-${unit.label}-${Date.now()}`,
       itemId: product.id,
       name: product.name,
       brand,
       unitLabel: unit.label,
-      unitPrice: unit.price,
+      unitPrice,
       rate: product.rate,
       qty: Math.max(1, qty),
     });
@@ -513,8 +499,10 @@ function ProductPicker({ onAdd }: { onAdd: (line: OrderLine) => void }) {
         </div>
         <div>
           <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-cream/45">Measurement</label>
-          <select className={selectCls} value={unitLabel} onChange={(e) => setUnitLabel(e.target.value)}>
-            {product?.units.map((u) => <option key={u.label} value={u.label}>{u.label} - {KES(u.price)}</option>)}
+          <select className={selectCls} value={unit?.label || ""} onChange={(e) => setUnitLabel(e.target.value)}>
+            {unitsForBrand.map((u) => (
+              <option key={u.label} value={u.label}>{u.label} - {KES(u.prices[brand])}</option>
+            ))}
           </select>
         </div>
         <div>
@@ -525,12 +513,18 @@ function ProductPicker({ onAdd }: { onAdd: (line: OrderLine) => void }) {
               onChange={(e) => setQty(parseInt(e.target.value) || 1)}
               className={`${selectCls} text-center`}
             />
-            <button onClick={handleAdd} className="flex shrink-0 items-center gap-1 rounded-lg bg-gold px-3 py-2 text-xs font-semibold text-navy-900 transition hover:bg-gold-light">
+            <button onClick={handleAdd} disabled={unitPrice === undefined} className="flex shrink-0 items-center gap-1 rounded-lg bg-gold px-3 py-2 text-xs font-semibold text-navy-900 transition hover:bg-gold-light disabled:cursor-not-allowed disabled:opacity-40">
               <Plus className="h-3.5 w-3.5" /> Add
             </button>
           </div>
         </div>
       </div>
+      {product && !product.verified && (
+        <p className="mt-3 text-[11px] text-cream/45">
+          Indicative price — this category is not yet on the official SAWANGA price
+          list. Confirm with the office before quoting a client.
+        </p>
+      )}
     </div>
   );
 }
