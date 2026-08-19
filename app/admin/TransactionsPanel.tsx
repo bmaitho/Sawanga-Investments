@@ -353,14 +353,14 @@ function TransactionDetail({
           <DocumentForm
             draft={draft} setField={setField} items={items} setItem={setItem}
             addRow={addRow} removeRow={removeRow} totals={totals}
-            readOnly={!editableQuote} title="QUOTATION" ref={transaction.ref}
+            readOnly={!editableQuote} title="QUOTATION" docRef={transaction.ref}
           />
         )}
         {subTab === "invoice" && (
           <DocumentForm
             draft={draft} setField={setField} items={items} setItem={setItem}
             addRow={addRow} removeRow={removeRow} totals={totals}
-            readOnly title="INVOICE" ref={transaction.ref?.replace("-Q-", "-INV-")}
+            readOnly title="INVOICE" docRef={transaction.ref?.replace("-Q-", "-INV-")}
           />
         )}
         {subTab === "delivery" && (
@@ -392,7 +392,7 @@ function TransactionDetail({
 //  Quotation / Invoice document — editable or read-only
 // ═══════════════════════════════════════════════════════════════════
 function DocumentForm({
-  draft, setField, items, setItem, addRow, removeRow, totals, readOnly, title, ref,
+  draft, setField, items, setItem, addRow, removeRow, totals, readOnly, title, docRef,
 }: any) {
   return (
     <div>
@@ -405,7 +405,7 @@ function DocumentForm({
           </div>
           <div className="text-right">
             <div className="font-display text-2xl font-bold gold-text">{title}</div>
-            <div className="font-mono text-xs text-cream/50">{ref}</div>
+            <div className="font-mono text-xs text-cream/50">{docRef}</div>
           </div>
         </div>
       </div>
@@ -432,7 +432,7 @@ function DocumentForm({
         </fieldset>
         <fieldset className="space-y-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-gold">Quote Details</p>
-          <Field label="Ref" value={ref} readOnly />
+          <Field label="Ref" value={docRef} readOnly />
           <Field label="Date" type="date" value={draft.quote_date} onChange={(v: string) => setField("quote_date", v)} readOnly={readOnly} />
           <Field label="Valid (days)" type="number" value={draft.valid_days} onChange={(v: string) => setField("valid_days", Number(v))} readOnly={readOnly} />
           <div>
