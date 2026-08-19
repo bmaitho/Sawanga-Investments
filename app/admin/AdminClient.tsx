@@ -36,7 +36,7 @@ function parseOrderDetail(raw: string): ParsedOrderDetail {
   if (!raw) return null;
   let location: string | null = null;
   let rest = raw;
-  const locMatch = raw.match(/^Location:\s*([^|~]*)[|~]\s*(.*)$/s);
+  const locMatch = raw.match(/^Location:\s*([^|~]*)[|~]\s*([\s\S]*)$/);
   if (locMatch) {
     location = locMatch[1].trim();
     rest = locMatch[2].trim();
