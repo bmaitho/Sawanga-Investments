@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   Plus, Printer, Trash2, ChevronRight, Loader2, X, CheckCircle2, Wallet,
 } from "lucide-react";
@@ -32,8 +32,19 @@ export default function TransactionsPanel({
   const [subTab, setSubTab] = useState<SubTab>("quotation");
   const [showNew, setShowNew] = useState(false);
   const [busy, setBusy] = useState(false);
+  const detailRef = useRef<HTMLDivElement | null>(null);
 
   const selected = transactions.find((t) => t.id === selectedId) || null;
+
+  function selectTransaction(id: string) {
+    setSelectedId(id);
+    setSubTab("quotation");
+    // On mobile the list sits above the detail panel in the stacked layout —
+    // jump the user down to it instead of leaving them to scroll manually.
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+      detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
 
   async function createTransaction(fields: Partial<Transaction>) {
     setBusy(true);
@@ -81,7 +92,7 @@ export default function TransactionsPanel({
             return (
               <button
                 key={t.id}
-                onClick={() => { setSelectedId(t.id!); setSubTab("quotation"); }}
+                onClick={() => selectTransaction(t.id!)}
                 className={`block w-full px-5 py-4 text-left transition hover:bg-white/[0.04] ${
                   selectedId === t.id ? "bg-white/[0.06]" : ""
                 }`}
@@ -107,7 +118,7 @@ export default function TransactionsPanel({
       </div>
 
       {/* ── DETAIL ───────────────────────────────────────────── */}
-      <div className="card-luxe overflow-hidden">
+      <div ref={detailRef} className="card-luxe overflow-hidden scroll-mt-4">
         {!selected ? (
           <div className="flex h-full min-h-[400px] items-center justify-center p-10 text-center text-cream/45">
             Select a transaction, or create a new one to get started.
@@ -147,7 +158,7 @@ function NewTransactionModal({ onClose, onCreate, busy }: any) {
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-navy-900/85 p-4 backdrop-blur-sm">
-      <div className="card-luxe relative w-full max-w-lg border-gold/25 bg-[#0d1f4a] p-6 md:p-8">
+      <div className="card-luxe relative max-h-[90vh] w-full max-w-lg overflow-y-auto border-gold/25 bg-[#0d1f4a] p-6 md:p-8">
         <button onClick={onClose} className="absolute right-5 top-5 text-cream/50 hover:text-gold">
           <X className="h-5 w-5" />
         </button>
@@ -328,14 +339,16 @@ function TransactionDetail({
         </div>
       </div>
 
-      {/* Sub tabs */}
-      <div className="flex gap-1 border-b border-white/10 px-6 pt-3 print:hidden">
+      {/* Sub tabs — horizontally scrollable so every tab stays reachable on
+          narrow screens (the detail card above this clips overflow, so
+          without this the Payments tab could be pushed off-screen). */}
+      <div className="flex gap-1 overflow-x-auto border-b border-white/10 px-4 pt-3 sm:px-6 print:hidden">
         {tabs.map((t) => (
           <button
             key={t.id}
             disabled={!t.enabled}
             onClick={() => setSubTab(t.id)}
-            className={`rounded-t-lg px-4 py-2.5 text-sm font-medium transition ${
+            className={`shrink-0 whitespace-nowrap rounded-t-lg px-3 py-2.5 text-sm font-medium transition sm:px-4 ${
               subTab === t.id
                 ? "border border-b-0 border-gold/30 bg-white/[0.05] text-cream"
                 : t.enabled
