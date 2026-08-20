@@ -34,6 +34,46 @@ const row = (label: string, value?: string) =>
     ? `<p style="margin:4px 0;"><span style="color:#9fb0d0;">${label}:</span> <strong style="color:#fff;">${value}</strong></p>`
     : "";
 
+// Same "Name (Brand, Unit) xQty (KES total) [Note: ...]" format the quote
+// form/admin panel use — parsed here so the CEO's email shows a proper
+// itemised table (with per-line and estimated-total pricing) instead of a
+// raw joined string.
+const ITEM_RE = /^(.+?) \((.+?),\s*(.+?)\)\s*x(\d+)\s*\((KES[\d,\s]*)\)(?:\s*\[Note:\s*(.*?)\])?$/;
+
+function productsTable(products: any): string {
+  const lines: string[] = Array.isArray(products) ? products : products ? [String(products)] : [];
+  if (!lines.length) return "";
+
+  let total = 0;
+  let anyParsed = false;
+  const rows = lines.map((raw) => {
+    const m = String(raw).match(ITEM_RE);
+    if (!m) return `<tr><td colspan="3" style="padding:8px 0;color:#fff;">${raw}</td></tr>`;
+    anyParsed = true;
+    const [, name, brand, unit, qty, kes, note] = m;
+    const amount = Number(kes.replace(/[^\d]/g, "")) || 0;
+    total += amount;
+    return `
+      <tr>
+        <td style="padding:8px 0;border-top:1px solid rgba(255,255,255,0.08);color:#fff;">
+          <div style="font-weight:600;">${name}</div>
+          <div style="color:#9fb0d0;font-size:12px;">${brand} · ${unit}${note ? ` · Note: ${note}` : ""}</div>
+        </td>
+        <td style="padding:8px 0;border-top:1px solid rgba(255,255,255,0.08);color:#c9d3e8;text-align:center;white-space:nowrap;">x${qty}</td>
+        <td style="padding:8px 0;border-top:1px solid rgba(255,255,255,0.08);color:#e4c677;text-align:right;white-space:nowrap;font-weight:600;">${kes.trim()}</td>
+      </tr>`;
+  }).join("");
+
+  const totalRow = anyParsed
+    ? `<tr><td style="padding:10px 0 0;" colspan="2"><strong style="color:#9fb0d0;">Est. total</strong></td>
+        <td style="padding:10px 0 0;text-align:right;"><strong style="color:#e4c677;font-size:16px;">KES ${total.toLocaleString("en-KE")}</strong></td></tr>`
+    : "";
+
+  return `
+    <p style="margin:12px 0 4px;color:#9fb0d0;">Products requested:</p>
+    <table style="width:100%;border-collapse:collapse;font-size:14px;">${rows}${totalRow}</table>`;
+}
+
 export async function sendQuoteEmails(d: any) {
   if (!resend) return { skipped: true };
   const details = [
@@ -44,7 +84,7 @@ export async function sendQuoteEmails(d: any) {
     row("Company", d.company),
     row("Project type", d.project_type),
     row("Location", d.location),
-    row("Products", Array.isArray(d.products) ? d.products.join(", ") : d.products),
+    productsTable(d.products),
     row("Budget", d.budget_range),
     row("Referral code", d.referral_code),
     d.message ? `<p style="margin:12px 0 0;color:#9fb0d0;">Message:</p><p style="margin:4px 0;color:#fff;">${d.message}</p>` : "",
