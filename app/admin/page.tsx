@@ -21,7 +21,7 @@ export default async function AdminPage() {
   // Logged in — fetch data and show dashboard
   const supabase = createServiceClient();
 
-  const [{ data: referrals }, { data: painters }, { data: redemptions }, { data: transactions }] =
+  const [{ data: referrals }, { data: painters }, { data: redemptions }, { data: transactions }, { data: quoteRequests }, { data: contactMessages }] =
     await Promise.all([
       supabase
         .from("referrals")
@@ -39,6 +39,14 @@ export default async function AdminPage() {
         .from("transactions")
         .select("*, transaction_items(*), transaction_payments(*)")
         .order("created_at", { ascending: false }),
+      supabase
+        .from("quote_requests")
+        .select("*")
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("contact_messages")
+        .select("*")
+        .order("created_at", { ascending: false }),
     ]);
 
   return (
@@ -47,6 +55,8 @@ export default async function AdminPage() {
       painters={painters || []}
       redemptions={redemptions || []}
       transactions={transactions || []}
+      quoteRequests={quoteRequests || []}
+      contactMessages={contactMessages || []}
       adminKey={ADMIN_KEY}
     />
   );

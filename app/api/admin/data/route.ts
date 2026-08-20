@@ -11,7 +11,7 @@ export async function GET(req: Request) {
 
   const supabase = createServiceClient();
 
-  const [{ data: referrals }, { data: painters }, { data: redemptions }, { data: transactions }] =
+  const [{ data: referrals }, { data: painters }, { data: redemptions }, { data: transactions }, { data: quoteRequests }, { data: contactMessages }] =
     await Promise.all([
       supabase
         .from("referrals")
@@ -29,6 +29,14 @@ export async function GET(req: Request) {
         .from("transactions")
         .select("*, transaction_items(*), transaction_payments(*)")
         .order("created_at", { ascending: false }),
+      supabase
+        .from("quote_requests")
+        .select("*")
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("contact_messages")
+        .select("*")
+        .order("created_at", { ascending: false }),
     ]);
 
   return NextResponse.json({
@@ -36,5 +44,7 @@ export async function GET(req: Request) {
     painters: painters || [],
     redemptions: redemptions || [],
     transactions: transactions || [],
+    quoteRequests: quoteRequests || [],
+    contactMessages: contactMessages || [],
   });
 }

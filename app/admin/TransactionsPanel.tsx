@@ -7,6 +7,7 @@ import {
   KES, UNITS, ACCOUNT_MANAGERS, PAYMENT_METHODS, computeTotals, agingBucket,
   agingDays, newBlankItem, type Transaction, type TransactionItem,
 } from "@/lib/transactions";
+import { CATALOG, CATALOG_CATEGORIES } from "@/lib/data";
 
 const bucketColor: Record<string, string> = {
   current: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20",
@@ -15,6 +16,7 @@ const bucketColor: Record<string, string> = {
 };
 const bucketLabel: Record<string, string> = { current: "Current", amber: "15+ Days", red: "30+ Days" };
 
+const optionDarkStyle = { backgroundColor: "#0d1f4a", color: "#f3f0e8" };
 const inputCls =
   "w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-cream placeholder-cream/30 outline-none transition focus:border-gold/60 disabled:opacity-50 disabled:cursor-not-allowed";
 const labelCls = "mb-1 block text-[11px] font-medium uppercase tracking-wide text-cream/45";
@@ -180,7 +182,7 @@ function NewTransactionModal({ onClose, onCreate, busy }: any) {
           <div>
             <label className={labelCls}>Prepared by</label>
             <select style={{ colorScheme: "dark" }} className={inputCls} value={f.account_manager} onChange={(e) => set("account_manager", e.target.value)}>
-              {ACCOUNT_MANAGERS.map((m) => <option key={m} value={m}>{m}</option>)}
+              {ACCOUNT_MANAGERS.map((m) => <option key={m} value={m} style={optionDarkStyle}>{m}</option>)}
             </select>
           </div>
         </div>
@@ -231,6 +233,12 @@ function TransactionDetail({
   }
   function addRow() {
     setDraft((d) => ({ ...d, transaction_items: [...items, newBlankItem(items.length)] }));
+  }
+  function addCatalogRow(patch: Partial<TransactionItem>) {
+    setDraft((d) => ({
+      ...d,
+      transaction_items: [...items, { ...newBlankItem(items.length), ...patch }],
+    }));
   }
   function removeRow(i: number) {
     setDraft((d) => ({ ...d, transaction_items: items.filter((_, idx) => idx !== i) }));
@@ -352,7 +360,7 @@ function TransactionDetail({
         {subTab === "quotation" && (
           <DocumentForm
             draft={draft} setField={setField} items={items} setItem={setItem}
-            addRow={addRow} removeRow={removeRow} totals={totals}
+            addRow={addRow} removeRow={removeRow} addCatalogRow={addCatalogRow} totals={totals}
             readOnly={false} title="QUOTATION" docRef={transaction.ref}
           />
         )}
@@ -392,7 +400,7 @@ function TransactionDetail({
 //  Quotation / Invoice document — editable or read-only
 // ═══════════════════════════════════════════════════════════════════
 function DocumentForm({
-  draft, setField, items, setItem, addRow, removeRow, totals, readOnly, title, docRef,
+  draft, setField, items, setItem, addRow, removeRow, addCatalogRow, totals, readOnly, title, docRef,
 }: any) {
   return (
     <div>
@@ -438,8 +446,8 @@ function DocumentForm({
           <div>
             <label className={labelCls}>Prepared by</label>
             <select style={{ colorScheme: "dark" }} disabled={readOnly} className={inputCls} value={draft.account_manager || ""} onChange={(e) => setField("account_manager", e.target.value)}>
-              <option value="">—</option>
-              {ACCOUNT_MANAGERS.map((m) => <option key={m} value={m}>{m}</option>)}
+              <option value="" style={optionDarkStyle}>—</option>
+              {ACCOUNT_MANAGERS.map((m) => <option key={m} value={m} style={optionDarkStyle}>{m}</option>)}
             </select>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -464,6 +472,10 @@ function DocumentForm({
           </div>
         </fieldset>
       </div>
+
+      {/* Pick from catalogue — fills description/unit/price automatically so
+          admin doesn't have to hand-type every line item */}
+      {!readOnly && addCatalogRow && <CatalogItemPicker onAdd={addCatalogRow} />}
 
       {/* Items table */}
       <div className="overflow-x-auto border border-t-0 border-white/10">
@@ -504,7 +516,7 @@ function DocumentForm({
                   <td className="px-3 py-2">
                     <select style={{ colorScheme: "dark" }} disabled={readOnly} className={inputCls} value={it.unit}
                       onChange={(e) => setItem(i, { unit: e.target.value })}>
-                      {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
+                      {UNITS.map((u) => <option key={u} value={u} style={optionDarkStyle}>{u}</option>)}
                     </select>
                   </td>
                   <td className="px-3 py-2">
@@ -565,6 +577,114 @@ function Field({ label, value, onChange, readOnly, type = "text" }: any) {
   );
 }
 
+// ═══════════════════════════════════════════════════════════════════
+//  Catalogue picker — same Category → Product → Brand → Measurement
+//  cascade as the painter portal, so admin doesn't have to hand-type
+//  descriptions/prices for standard stock items. "Add custom row" below
+//  the items table still covers one-off items (delivery, labour, etc.)
+// ═══════════════════════════════════════════════════════════════════
+const UNIT_LABEL_TO_CODE = (label: string): string => {
+  const l = label.toLowerCase();
+  if (l.includes("roll")) return "Roll";
+  if (l.includes("kg") || l.includes("bag")) return "Bag";
+  if (l.includes("ltr") || l.includes("litre") || l.includes(" l ") || l.endsWith(" l")) return "L";
+  if (l.includes("sheet")) return "Sheet";
+  if (l.includes("tin")) return "Tin";
+  if (l.includes("m2") || l.includes("m²") || l.includes("sqm")) return "m²";
+  if (l.includes("box")) return "Box";
+  if (l.includes("set")) return "Set";
+  return "Pcs";
+};
+
+function CatalogItemPicker({ onAdd }: { onAdd: (patch: Partial<TransactionItem>) => void }) {
+  const [category, setCategory] = useState(CATALOG_CATEGORIES[0]);
+  const productsInCategory = CATALOG.filter((c: any) => c.category === category);
+  const [productId, setProductId] = useState(productsInCategory[0]?.id || "");
+  const product = CATALOG.find((c: any) => c.id === productId) || productsInCategory[0];
+  const [brand, setBrand] = useState(product?.brands[0] || "");
+  const [unitLabel, setUnitLabelState] = useState(product?.units[0]?.label || "");
+  const [qty, setQty] = useState(1);
+
+  const unitsForBrand = (product?.units || []).filter((u: any) => u.prices[brand] !== undefined);
+  const unit = unitsForBrand.find((u: any) => u.label === unitLabel) || unitsForBrand[0];
+  const unitPrice = unit ? unit.prices[brand] : undefined;
+
+  function onCategoryChange(cat: string) {
+    setCategory(cat);
+    const first = CATALOG.find((c: any) => c.category === cat);
+    setProductId(first?.id || "");
+    setBrand(first?.brands[0] || "");
+    setUnitLabelState(first?.units[0]?.label || "");
+  }
+  function onProductChange(id: string) {
+    setProductId(id);
+    const p = CATALOG.find((c: any) => c.id === id);
+    setBrand(p?.brands[0] || "");
+    setUnitLabelState(p?.units[0]?.label || "");
+  }
+
+  function handleAdd() {
+    if (!product || !unit || unitPrice === undefined) return;
+    onAdd({
+      description: `${product.name} (${brand})`,
+      spec_notes: unit.label,
+      unit: UNIT_LABEL_TO_CODE(unit.label),
+      unit_price: unitPrice,
+      qty: Math.max(1, qty),
+      discount_pct: 0,
+    });
+    setQty(1);
+  }
+
+  return (
+    <div className="border-t-0 border border-b-0 border-white/10 bg-white/[0.015] p-4">
+      <p className="mb-3 text-[11px] font-medium uppercase tracking-wide text-gold/80">Add from catalogue</p>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div>
+          <label className={labelCls}>Category</label>
+          <select style={{ colorScheme: "dark" }} className={inputCls} value={category} onChange={(e) => onCategoryChange(e.target.value)}>
+            {CATALOG_CATEGORIES.map((c: string) => <option key={c} value={c} style={optionDarkStyle}>{c}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className={labelCls}>Product</label>
+          <select style={{ colorScheme: "dark" }} className={inputCls} value={productId} onChange={(e) => onProductChange(e.target.value)}>
+            {productsInCategory.map((p: any) => <option key={p.id} value={p.id} style={optionDarkStyle}>{p.name}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className={labelCls}>Brand</label>
+          <select style={{ colorScheme: "dark" }} className={inputCls} value={brand} onChange={(e) => setBrand(e.target.value)}>
+            {product?.brands.map((b: string) => <option key={b} value={b} style={optionDarkStyle}>{b}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className={labelCls}>Measurement</label>
+          <select style={{ colorScheme: "dark" }} className={inputCls} value={unit?.label || ""} onChange={(e) => setUnitLabelState(e.target.value)}>
+            {unitsForBrand.map((u: any) => (
+              <option key={u.label} value={u.label} style={optionDarkStyle}>{u.label} — {KES(u.prices[brand])}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <div className="mt-3 flex flex-wrap items-end gap-3">
+        <div className="w-24">
+          <label className={labelCls}>Qty</label>
+          <input type="number" min={1} className={inputCls} value={qty} onChange={(e) => setQty(Number(e.target.value) || 1)} />
+        </div>
+        <button
+          type="button"
+          onClick={handleAdd}
+          disabled={!unit || unitPrice === undefined}
+          className="flex items-center gap-2 rounded-lg bg-gold px-4 py-2 text-sm font-semibold text-navy-900 transition hover:bg-gold/90 disabled:opacity-50"
+        >
+          <Plus className="h-4 w-4" /> Add to quotation
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function Row({ label, value, bold }: any) {
   return (
     <div className="flex items-center justify-between">
@@ -612,10 +732,10 @@ function DeliveryNoteForm({ draft, setField, items, setItem, transactionRef }: a
                 </td>
                 <td className="px-3 py-2">
                   <select style={{ colorScheme: "dark" }} className={inputCls} value={it.condition || ""} onChange={(e) => setItem(i, { condition: e.target.value })}>
-                    <option value="">—</option>
-                    <option value="Good">Good</option>
-                    <option value="Damaged">Damaged</option>
-                    <option value="Short">Short</option>
+                    <option value="" style={optionDarkStyle}>—</option>
+                    <option value="Good" style={optionDarkStyle}>Good</option>
+                    <option value="Damaged" style={optionDarkStyle}>Damaged</option>
+                    <option value="Short" style={optionDarkStyle}>Short</option>
                   </select>
                 </td>
                 <td className="px-3 py-2 text-center">
@@ -695,7 +815,7 @@ function PaymentsTab({ transaction, adminKey, onRefresh, total, balanceDue, paym
         <div className="grid gap-3 sm:grid-cols-4">
           <input type="number" placeholder="Amount (KES)" value={amount} onChange={(e) => setAmount(e.target.value)} className={inputCls} />
           <select style={{ colorScheme: "dark" }} value={method} onChange={(e) => setMethod(e.target.value)} className={inputCls}>
-            {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m === "mpesa" ? "M-Pesa" : m}</option>)}
+            {PAYMENT_METHODS.map((m) => <option key={m} value={m} style={optionDarkStyle}>{m === "mpesa" ? "M-Pesa" : m}</option>)}
           </select>
           <input placeholder="Note (optional)" value={note} onChange={(e) => setNote(e.target.value)} className={`${inputCls} sm:col-span-1`} />
           <button onClick={record} disabled={saving} className="btn-gold justify-center text-xs">

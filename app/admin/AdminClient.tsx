@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import {
   CheckCircle2, XCircle, Clock, Users, Wallet,
   RefreshCw, ChevronDown, ChevronUp, BadgeCheck, LogOut,
-  FileText, BarChart3,
+  FileText, BarChart3, Inbox, MessageSquare,
 } from "lucide-react";
 import TransactionsPanel from "./TransactionsPanel";
 import PaymentsTracker from "./PaymentsTracker";
@@ -12,7 +12,16 @@ import PaymentsTracker from "./PaymentsTracker";
 const KES = (n: number) =>
   "KES " + Number(n || 0).toLocaleString("en-KE", { maximumFractionDigits: 0 });
 
+const optionDarkStyle = { backgroundColor: "#0d1f4a", color: "#f3f0e8" };
+
 const statusColor: Record<string, string> = {
+  new:       "text-gold bg-gold/10 border-gold/20",
+  reviewing: "text-sky-400 bg-sky-400/10 border-sky-400/20",
+  quoted:    "text-sky-400 bg-sky-400/10 border-sky-400/20",
+  won:       "text-emerald-400 bg-emerald-400/10 border-emerald-400/20",
+  lost:      "text-red-400 bg-red-400/10 border-red-400/20",
+  read:      "text-sky-400 bg-sky-400/10 border-sky-400/20",
+  responded: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20",
   approved: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20",
   paid:      "text-emerald-400 bg-emerald-400/10 border-emerald-400/20",
   pending:   "text-gold bg-gold/10 border-gold/20",
@@ -59,25 +68,31 @@ function parseOrderDetail(raw: string): ParsedOrderDetail {
 }
 
 type Tab = "referrals" | "painters" | "redemptions";
-type Section = "transactions" | "painter-portal";
+type Section = "transactions" | "painter-portal" | "leads";
 type TxnView = "list" | "tracker";
+type LeadTab = "quotes" | "messages";
 
 export default function AdminClient({
-  referrals, painters, redemptions, transactions, adminKey,
+  referrals, painters, redemptions, transactions, quoteRequests, contactMessages, adminKey,
 }: {
   referrals: any[];
   painters: any[];
   redemptions: any[];
   transactions: any[];
+  quoteRequests?: any[];
+  contactMessages?: any[];
   adminKey: string;
 }) {
   const [section, setSection] = useState<Section>("transactions");
   const [txnView, setTxnView] = useState<TxnView>("list");
   const [tab, setTab] = useState<Tab>("referrals");
+  const [leadTab, setLeadTab] = useState<LeadTab>("quotes");
   const [loading, setLoading] = useState<string | null>(null);
   const [localReferrals, setLocalReferrals] = useState(referrals);
   const [localRedemptions, setLocalRedemptions] = useState(redemptions);
   const [localTransactions, setLocalTransactions] = useState(transactions);
+  const [localQuoteRequests, setLocalQuoteRequests] = useState(quoteRequests || []);
+  const [localContactMessages, setLocalContactMessages] = useState(contactMessages || []);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
@@ -95,8 +110,29 @@ export default function AdminClient({
       setLocalReferrals(d.referrals);
       setLocalRedemptions(d.redemptions);
       setLocalTransactions(d.transactions || []);
+      setLocalQuoteRequests(d.quoteRequests || []);
+      setLocalContactMessages(d.contactMessages || []);
     }
     setRefreshing(false);
+  }
+
+  async function updateLeadStatus(table: "quote_requests" | "contact_messages", id: string, status: string) {
+    setLoading(id + "-lead");
+    const res = await fetch("/api/admin/update-lead", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ table, id, status, adminKey }),
+    });
+    setLoading(null);
+    if (res.ok) {
+      if (table === "quote_requests") {
+        setLocalQuoteRequests((prev) => prev.map((r) => r.id === id ? { ...r, status } : r));
+      } else {
+        setLocalContactMessages((prev) => prev.map((r) => r.id === id ? { ...r, status } : r));
+      }
+    } else {
+      alert("Failed to update status.");
+    }
   }
 
   const pending = localReferrals.filter((r) => r.status === "pending");
@@ -163,10 +199,10 @@ export default function AdminClient({
         <div className="flex flex-wrap items-center justify-between gap-4 print:hidden">
           <div>
             <h1 className="font-display text-3xl font-semibold text-cream">
-              SAWANGA <span className="gold-text">{section === "transactions" ? "Transaction Suite" : "Admin"}</span>
+              SAWANGA <span className="gold-text">{section === "transactions" ? "Transaction Suite" : section === "leads" ? "Leads" : "Admin"}</span>
             </h1>
             <p className="mt-1 text-sm text-cream/45">
-              {section === "transactions" ? "Quotations · Invoices · Delivery · Payments" : "Painter portal management"}
+              {section === "transactions" ? "Quotations · Invoices · Delivery · Payments" : section === "leads" ? "Quote requests & contact messages from the website" : "Painter portal management"}
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -200,6 +236,19 @@ export default function AdminClient({
           >
             <Users className="h-4 w-4" /> Painter Portal
           </button>
+          <button
+            onClick={() => setSection("leads")}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition ${
+              section === "leads" ? "bg-gold text-navy-900" : "text-cream/55 hover:text-cream"
+            }`}
+          >
+            <Inbox className="h-4 w-4" /> Leads
+            {(localQuoteRequests.filter((q) => q.status === "new").length + localContactMessages.filter((m) => m.status === "new").length) > 0 && (
+              <span className="rounded-full bg-navy-900/20 px-2 py-0.5 text-xs font-bold">
+                {localQuoteRequests.filter((q) => q.status === "new").length + localContactMessages.filter((m) => m.status === "new").length}
+              </span>
+            )}
+          </button>
         </div>
 
         {/* ══════════════════ TRANSACTION SUITE ══════════════════ */}
@@ -232,6 +281,165 @@ export default function AdminClient({
               />
             ) : (
               <PaymentsTracker transactions={localTransactions} />
+            )}
+          </div>
+        )}
+
+        {/* ══════════════════ LEADS (quote requests + contact messages) ══════════════════ */}
+        {section === "leads" && (
+          <div className="mt-6">
+            <div className="flex gap-2 border-b border-white/10 print:hidden">
+              <button
+                onClick={() => setLeadTab("quotes")}
+                className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition ${
+                  leadTab === "quotes" ? "border-gold text-cream" : "border-transparent text-cream/45 hover:text-cream/70"
+                }`}
+              >
+                <FileText className="h-4 w-4" /> Quote Requests
+                {localQuoteRequests.length > 0 && (
+                  <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs font-semibold text-cream/60">{localQuoteRequests.length}</span>
+                )}
+              </button>
+              <button
+                onClick={() => setLeadTab("messages")}
+                className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition ${
+                  leadTab === "messages" ? "border-gold text-cream" : "border-transparent text-cream/45 hover:text-cream/70"
+                }`}
+              >
+                <MessageSquare className="h-4 w-4" /> Contact Messages
+                {localContactMessages.length > 0 && (
+                  <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs font-semibold text-cream/60">{localContactMessages.length}</span>
+                )}
+              </button>
+            </div>
+
+            {leadTab === "quotes" && (
+              <div className="mt-6 space-y-3">
+                {localQuoteRequests.length === 0 && (
+                  <p className="card-luxe p-8 text-center text-cream/45">No quote requests yet.</p>
+                )}
+                {localQuoteRequests.map((q) => {
+                  const isExpanded = expandedId === "quote-" + q.id;
+                  return (
+                    <div key={q.id} className="card-luxe overflow-hidden">
+                      <div className="flex flex-wrap items-center gap-4 p-5">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-3">
+                            <span className="font-semibold text-cream">{q.full_name}</span>
+                            <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize ${statusColor[q.status] || "text-cream/50 bg-white/5 border-white/10"}`}>
+                              {q.status}
+                            </span>
+                          </div>
+                          <div className="mt-1 flex flex-wrap gap-3 text-xs text-cream/45">
+                            <span>{q.phone}</span>
+                            <span>·</span>
+                            <span>{q.email}</span>
+                            <span>·</span>
+                            <span className="capitalize">{q.customer_type}</span>
+                            <span>·</span>
+                            <span>{new Date(q.created_at).toLocaleDateString("en-KE")}</span>
+                          </div>
+                        </div>
+
+                        <select
+                          style={{ colorScheme: "dark" }}
+                          disabled={loading === q.id + "-lead"}
+                          value={q.status}
+                          onChange={(e) => updateLeadStatus("quote_requests", q.id, e.target.value)}
+                          className="rounded-lg border border-white/15 bg-white/[0.04] px-3 py-1.5 text-xs text-cream"
+                        >
+                          {["new", "reviewing", "quoted", "won", "lost"].map((s) => (
+                            <option key={s} value={s} style={optionDarkStyle}>{s}</option>
+                          ))}
+                        </select>
+
+                        <button
+                          onClick={() => setExpandedId(isExpanded ? null : "quote-" + q.id)}
+                          className="text-cream/30 hover:text-cream/60"
+                        >
+                          {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                        </button>
+                      </div>
+
+                      {isExpanded && (
+                        <div className="border-t border-white/8 bg-white/[0.02] px-5 py-4 space-y-2 text-sm">
+                          {q.company && <p><span className="text-cream/40">Company:</span> <span className="text-cream/80">{q.company}</span></p>}
+                          {q.project_type && <p><span className="text-cream/40">Project type:</span> <span className="text-cream/80">{q.project_type}</span></p>}
+                          {q.location && <p><span className="text-cream/40">Location:</span> <span className="text-cream/80">{q.location}</span></p>}
+                          {q.products?.length > 0 && <p><span className="text-cream/40">Products:</span> <span className="text-cream/80">{q.products.join(", ")}</span></p>}
+                          {q.budget_range && <p><span className="text-cream/40">Budget:</span> <span className="text-cream/80">{q.budget_range}</span></p>}
+                          {q.referral_code && <p><span className="text-cream/40">Referral code:</span> <span className="text-cream/80">{q.referral_code}</span></p>}
+                          {q.message && (
+                            <div>
+                              <p className="text-cream/40">Message:</p>
+                              <p className="mt-1 text-cream/80">{q.message}</p>
+                            </div>
+                          )}
+                          <a href={`mailto:${q.email}`} className="inline-block text-xs font-medium text-gold hover:underline">Reply by email →</a>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {leadTab === "messages" && (
+              <div className="mt-6 space-y-3">
+                {localContactMessages.length === 0 && (
+                  <p className="card-luxe p-8 text-center text-cream/45">No contact messages yet.</p>
+                )}
+                {localContactMessages.map((m) => {
+                  const isExpanded = expandedId === "msg-" + m.id;
+                  return (
+                    <div key={m.id} className="card-luxe overflow-hidden">
+                      <div className="flex flex-wrap items-center gap-4 p-5">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-3">
+                            <span className="font-semibold text-cream">{m.full_name}</span>
+                            <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize ${statusColor[m.status] || "text-cream/50 bg-white/5 border-white/10"}`}>
+                              {m.status}
+                            </span>
+                          </div>
+                          <div className="mt-1 flex flex-wrap gap-3 text-xs text-cream/45">
+                            <span>{m.email}</span>
+                            {m.phone && <><span>·</span><span>{m.phone}</span></>}
+                            {m.subject && <><span>·</span><span>{m.subject}</span></>}
+                            <span>·</span>
+                            <span>{new Date(m.created_at).toLocaleDateString("en-KE")}</span>
+                          </div>
+                        </div>
+
+                        <select
+                          style={{ colorScheme: "dark" }}
+                          disabled={loading === m.id + "-lead"}
+                          value={m.status}
+                          onChange={(e) => updateLeadStatus("contact_messages", m.id, e.target.value)}
+                          className="rounded-lg border border-white/15 bg-white/[0.04] px-3 py-1.5 text-xs text-cream"
+                        >
+                          {["new", "read", "responded"].map((s) => (
+                            <option key={s} value={s} style={optionDarkStyle}>{s}</option>
+                          ))}
+                        </select>
+
+                        <button
+                          onClick={() => setExpandedId(isExpanded ? null : "msg-" + m.id)}
+                          className="text-cream/30 hover:text-cream/60"
+                        >
+                          {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                        </button>
+                      </div>
+
+                      {isExpanded && (
+                        <div className="border-t border-white/8 bg-white/[0.02] px-5 py-4 space-y-2 text-sm">
+                          <p className="text-cream/80">{m.message}</p>
+                          <a href={`mailto:${m.email}`} className="inline-block text-xs font-medium text-gold hover:underline">Reply by email →</a>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
         )}

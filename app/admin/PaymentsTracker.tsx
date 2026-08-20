@@ -72,7 +72,8 @@ export default function PaymentsTracker({ transactions }: { transactions: Transa
     return Array.from(map.values());
   }, [rows]);
 
-  const inputCls =
+  const optionDarkStyle = { backgroundColor: "#0d1f4a", color: "#f3f0e8" };
+const inputCls =
     "rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-cream placeholder-cream/30 outline-none transition focus:border-gold/60";
 
   return (
@@ -110,14 +111,14 @@ export default function PaymentsTracker({ transactions }: { transactions: Transa
           className={`${inputCls} flex-1 min-w-[200px]`}
         />
         <select style={{ colorScheme: "dark" }} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={inputCls}>
-          <option value="all">All statuses</option>
-          <option value="current">Current</option>
-          <option value="amber">15+ Days</option>
-          <option value="red">30+ Days</option>
+          <option value="all" style={optionDarkStyle}>All statuses</option>
+          <option value="current" style={optionDarkStyle}>Current</option>
+          <option value="amber" style={optionDarkStyle}>15+ Days</option>
+          <option value="red" style={optionDarkStyle}>30+ Days</option>
         </select>
         <select style={{ colorScheme: "dark" }} value={managerFilter} onChange={(e) => setManagerFilter(e.target.value)} className={inputCls}>
-          <option value="all">All managers</option>
-          {ACCOUNT_MANAGERS.map((m) => <option key={m} value={m}>{m}</option>)}
+          <option value="all" style={optionDarkStyle}>All managers</option>
+          {ACCOUNT_MANAGERS.map((m) => <option key={m} value={m} style={optionDarkStyle}>{m}</option>)}
         </select>
       </div>
 
