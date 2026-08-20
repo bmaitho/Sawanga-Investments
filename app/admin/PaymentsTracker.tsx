@@ -1,6 +1,6 @@
 "use client";
-import { useMemo, useState } from "react";
-import { Loader2, Wallet, X } from "lucide-react";
+import { Fragment, useMemo, useState } from "react";
+import { CheckCircle2, ChevronDown, ChevronUp, Loader2, Wallet, X } from "lucide-react";
 import { KES, ACCOUNT_MANAGERS, PAYMENT_METHODS, agingBucket, agingDays, type Transaction } from "@/lib/transactions";
 
 const bucketColor: Record<string, string> = {
@@ -21,6 +21,7 @@ export default function PaymentsTracker({
   const [statusFilter, setStatusFilter] = useState("all");
   const [managerFilter, setManagerFilter] = useState("all");
   const [payTxn, setPayTxn] = useState<Transaction | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   // Only stages that have actually been invoiced count towards payments tracking.
   const invoiced = useMemo(
@@ -195,7 +196,8 @@ const inputCls =
                 <tr><td colSpan={11} className="px-4 py-6 text-center text-cream/40">No matching transactions.</td></tr>
               )}
               {rows.map((r) => (
-                <tr key={r.t.id} className="border-t border-white/8">
+                <Fragment key={r.t.id}>
+                <tr className="border-t border-white/8">
                   <td className="px-4 py-3 font-mono text-xs text-gold">{r.t.ref}</td>
                   <td className="px-4 py-3">
                     <div className="font-medium text-cream">{r.t.client_name}</div>
@@ -215,17 +217,64 @@ const inputCls =
                     </span>
                   </td>
                   <td className="px-4 py-3 text-cream/50">{r.t.account_manager || "—"}</td>
-                  <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={() => setPayTxn(r.t)}
-                      disabled={r.balance <= 0}
-                      title={r.balance <= 0 ? "Fully paid" : "Record a payment"}
-                      className="flex items-center gap-1 rounded-lg border border-gold/30 bg-gold/[0.08] px-2.5 py-1.5 text-[11px] font-semibold text-gold transition hover:bg-gold/15 disabled:cursor-not-allowed disabled:opacity-30"
-                    >
-                      <Wallet className="h-3 w-3" /> Record
-                    </button>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => setExpandedId(expandedId === r.t.id ? null : r.t.id!)}
+                        title={expandedId === r.t.id ? "Hide payment history" : "View payment history"}
+                        className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-[11px] font-semibold text-cream/60 transition hover:bg-white/[0.08] hover:text-cream"
+                      >
+                        {expandedId === r.t.id ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                        History
+                      </button>
+                      <button
+                        onClick={() => setPayTxn(r.t)}
+                        disabled={r.balance <= 0}
+                        title={r.balance <= 0 ? "Fully paid" : "Record a payment"}
+                        className="flex items-center gap-1 rounded-lg border border-gold/30 bg-gold/[0.08] px-2.5 py-1.5 text-[11px] font-semibold text-gold transition hover:bg-gold/15 disabled:cursor-not-allowed disabled:opacity-30"
+                      >
+                        <Wallet className="h-3 w-3" /> Record
+                      </button>
+                    </div>
                   </td>
                 </tr>
+                {expandedId === r.t.id && (
+                  <tr className="border-t border-white/8 bg-white/[0.02]">
+                    <td colSpan={11} className="px-4 py-4">
+                      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-cream/45">
+                        Payment history · {r.t.ref}
+                      </p>
+                      <div className="overflow-hidden rounded-lg border border-white/10">
+                        <table className="w-full text-left text-sm">
+                          <thead className="bg-white/[0.03] text-xs uppercase tracking-wide text-cream/50">
+                            <tr>
+                              <th className="px-4 py-2">Date</th>
+                              <th className="px-4 py-2">Method</th>
+                              <th className="px-4 py-2">Note</th>
+                              <th className="px-4 py-2 text-right">Amount</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(!r.t.transaction_payments || r.t.transaction_payments.length === 0) && (
+                              <tr><td colSpan={4} className="px-4 py-4 text-center text-cream/40">No payments recorded yet.</td></tr>
+                            )}
+                            {(r.t.transaction_payments || []).map((p: any) => (
+                              <tr key={p.id} className="border-t border-white/8">
+                                <td className="px-4 py-2 text-cream/60">{p.created_at ? new Date(p.created_at).toLocaleDateString("en-KE") : "—"}</td>
+                                <td className="px-4 py-2 capitalize text-cream/70">{p.method === "mpesa" ? "M-Pesa" : p.method}</td>
+                                <td className="px-4 py-2 text-cream/45">{p.note || "—"}</td>
+                                <td className="px-4 py-2 text-right font-semibold text-emerald-400">
+                                  <CheckCircle2 className="mr-1 inline h-3.5 w-3.5" /> {KES(p.amount)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
               ))}
             </tbody>
             {rows.length > 0 && (
