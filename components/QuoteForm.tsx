@@ -181,7 +181,7 @@ export default function QuoteForm() {
       <div className="mt-6">
         <label className={label}>What do you need?</label>
         <p className="mb-3 -mt-1 text-xs text-cream/45">
-          Pick items and quantities below — prices update automatically from our current price list.
+          Pick items and quantities below — we'll work out the final quote for you.
         </p>
         <QuoteProductPicker onAdd={addLine} />
 
@@ -194,31 +194,26 @@ export default function QuoteForm() {
             <div className="overflow-x-auto rounded-xl border border-white/10">
               <div className="min-w-[520px]">
                 <div className="grid grid-cols-12 gap-2 bg-white/[0.04] px-4 py-2 text-xs font-medium uppercase tracking-wide text-cream/50">
-                  <div className="col-span-5">Item</div>
-                  <div className="col-span-2 text-right">Unit price</div>
-                  <div className="col-span-2 text-center">Qty</div>
-                  <div className="col-span-2 text-right">Total</div>
-                  <div className="col-span-1" />
+                  <div className="col-span-7">Item</div>
+                  <div className="col-span-3 text-center">Qty</div>
+                  <div className="col-span-2" />
                 </div>
                 {lines.map((l) => {
-                  const lineTotal = l.qty * l.unitPrice;
                   return (
                     <div key={l.key} className="border-t border-white/10 bg-gold/[0.04] px-4 py-3">
                       <div className="grid grid-cols-12 items-center gap-2">
-                        <div className="col-span-5">
+                        <div className="col-span-7">
                           <div className="text-sm font-medium text-cream">{l.name}</div>
                           <div className="text-xs text-cream/45">{l.brand} · {l.unitLabel}</div>
                         </div>
-                        <div className="col-span-2 text-right text-sm text-cream/60">{KES(l.unitPrice)}</div>
-                        <div className="col-span-2 flex justify-center">
+                        <div className="col-span-3 flex justify-center">
                           <input
                             type="number" min={1} step={1} value={l.qty}
                             onChange={(e) => updateQty(l.key, parseInt(e.target.value) || 1)}
                             className="w-16 rounded-lg border border-white/15 bg-white/[0.05] px-2 py-1.5 text-center text-sm text-cream outline-none focus:border-gold/60"
                           />
                         </div>
-                        <div className="col-span-2 text-right text-sm font-semibold text-cream">{KES(lineTotal)}</div>
-                        <div className="col-span-1 text-right">
+                        <div className="col-span-2 text-right">
                           <button type="button" onClick={() => removeLine(l.key)} title="Remove item" className="text-red-400/60 hover:text-red-400">
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -238,12 +233,6 @@ export default function QuoteForm() {
           )}
         </div>
 
-        {hasItems && (
-          <div className="mt-4 flex items-center justify-between rounded-xl border border-gold/30 bg-gold/[0.06] p-5">
-            <span className="text-sm text-cream/60">Estimated subtotal</span>
-            <span className="font-display text-xl font-semibold gold-text">{KES(subtotal)}</span>
-          </div>
-        )}
       </div>
 
       <div className="mt-6 grid gap-5 sm:grid-cols-2">
@@ -260,7 +249,7 @@ export default function QuoteForm() {
       <div className="mt-6">
         <label className={label}>Estimated budget (optional)</label>
         <p className="mb-3 -mt-1 text-xs text-cream/45">
-          Only needed if it differs from the subtotal above — e.g. if you're still deciding on quantities.
+          Optional — helps us tailor the quote to your budget.
         </p>
         <div className="flex flex-wrap gap-3">
           {BUDGETS.map((b) => (
@@ -356,7 +345,7 @@ function QuoteProductPicker({ onAdd }: { onAdd: (line: OrderLine) => void }) {
 
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className="flex flex-col gap-3">
         <div>
           <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-cream/45">Category</label>
           <select className={selectCls} style={selectDarkStyle} value={category} onChange={(e) => onCategoryChange(e.target.value)}>
@@ -379,12 +368,12 @@ function QuoteProductPicker({ onAdd }: { onAdd: (line: OrderLine) => void }) {
           <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-cream/45">Measurement</label>
           <select className={selectCls} style={selectDarkStyle} value={unit?.label || ""} onChange={(e) => setUnitLabel(e.target.value)}>
             {unitsForBrand.map((u) => (
-              <option key={u.label} value={u.label} style={optionDarkStyle}>{u.label} — {KES(u.prices[brand])}</option>
+              <option key={u.label} value={u.label} style={optionDarkStyle}>{u.label}</option>
             ))}
           </select>
         </div>
-        <div className="sm:col-span-2 sm:grid sm:grid-cols-[1fr_auto] sm:gap-3">
-          <div>
+        <div className="flex items-end gap-3">
+          <div className="flex-1">
             <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-cream/45">Qty</label>
             <input
               type="number" min={1} value={qty}
@@ -396,7 +385,7 @@ function QuoteProductPicker({ onAdd }: { onAdd: (line: OrderLine) => void }) {
             type="button"
             onClick={handleAdd}
             disabled={!unit || unitPrice === undefined}
-            className="mt-2 w-full rounded-lg bg-gold px-5 py-2.5 text-sm font-semibold text-navy-900 transition hover:bg-gold/90 disabled:opacity-40 sm:mt-0 sm:w-auto sm:self-end"
+            className="rounded-lg bg-gold px-5 py-2.5 text-sm font-semibold text-navy-900 transition hover:bg-gold/90 disabled:opacity-40"
           >
             + Add to request
           </button>
