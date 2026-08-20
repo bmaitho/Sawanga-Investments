@@ -1,6 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
-import { KES, ACCOUNT_MANAGERS, agingBucket, agingDays, type Transaction } from "@/lib/transactions";
+import { Loader2, Wallet, X } from "lucide-react";
+import { KES, ACCOUNT_MANAGERS, PAYMENT_METHODS, agingBucket, agingDays, type Transaction } from "@/lib/transactions";
 
 const bucketColor: Record<string, string> = {
   current: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20",
@@ -9,10 +10,17 @@ const bucketColor: Record<string, string> = {
 };
 const bucketLabel: Record<string, string> = { current: "Current", amber: "15+ Days", red: "30+ Days" };
 
-export default function PaymentsTracker({ transactions }: { transactions: Transaction[] }) {
+export default function PaymentsTracker({
+  transactions, adminKey, onRefresh,
+}: {
+  transactions: Transaction[];
+  adminKey?: string;
+  onRefresh?: () => Promise<void> | void;
+}) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [managerFilter, setManagerFilter] = useState("all");
+  const [payTxn, setPayTxn] = useState<Transaction | null>(null);
 
   // Only stages that have actually been invoiced count towards payments tracking.
   const invoiced = useMemo(
@@ -179,11 +187,12 @@ const inputCls =
                 <th className="px-4 py-3 text-right">Balance</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Account mgr</th>
+                <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody>
               {rows.length === 0 && (
-                <tr><td colSpan={10} className="px-4 py-6 text-center text-cream/40">No matching transactions.</td></tr>
+                <tr><td colSpan={11} className="px-4 py-6 text-center text-cream/40">No matching transactions.</td></tr>
               )}
               {rows.map((r) => (
                 <tr key={r.t.id} className="border-t border-white/8">
@@ -206,6 +215,16 @@ const inputCls =
                     </span>
                   </td>
                   <td className="px-4 py-3 text-cream/50">{r.t.account_manager || "—"}</td>
+                  <td className="px-4 py-3 text-right">
+                    <button
+                      onClick={() => setPayTxn(r.t)}
+                      disabled={r.balance <= 0}
+                      title={r.balance <= 0 ? "Fully paid" : "Record a payment"}
+                      className="flex items-center gap-1 rounded-lg border border-gold/30 bg-gold/[0.08] px-2.5 py-1.5 text-[11px] font-semibold text-gold transition hover:bg-gold/15 disabled:cursor-not-allowed disabled:opacity-30"
+                    >
+                      <Wallet className="h-3 w-3" /> Record
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -216,12 +235,112 @@ const inputCls =
                   <td className="px-4 py-3 text-right">{KES(totals.invoiced)}</td>
                   <td className="px-4 py-3 text-right text-emerald-400">{KES(totals.collected)}</td>
                   <td className="px-4 py-3 text-right">{KES(totals.outstanding)}</td>
-                  <td colSpan={2} />
+                  <td colSpan={3} />
                 </tr>
               </tfoot>
             )}
           </table>
         </div>
+      </div>
+
+      {payTxn && (
+        <RecordPaymentModal
+          transaction={payTxn}
+          adminKey={adminKey}
+          onClose={() => setPayTxn(null)}
+          onSaved={async () => {
+            setPayTxn(null);
+            if (onRefresh) await onRefresh();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function RecordPaymentModal({
+  transaction, adminKey, onClose, onSaved,
+}: {
+  transaction: Transaction;
+  adminKey?: string;
+  onClose: () => void;
+  onSaved: () => Promise<void> | void;
+}) {
+  const [amount, setAmount] = useState("");
+  const [method, setMethod] = useState("bank");
+  const [note, setNote] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+
+  const balance = (transaction.total || 0) - (transaction.amount_paid || 0);
+  const optionDarkStyle = { backgroundColor: "#0d1f4a", color: "#f3f0e8" };
+  const inputCls =
+    "w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-cream placeholder-cream/30 outline-none transition focus:border-gold/60";
+
+  async function record() {
+    const amt = Number(amount);
+    if (!amt || amt <= 0) { setErr("Enter a valid amount."); return; }
+    setSaving(true);
+    setErr("");
+    try {
+      const res = await fetch(`/api/admin/transactions/${transaction.id}/payments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminKey, amount: amt, method, note }),
+      });
+      if (!res.ok) throw new Error("Could not record payment.");
+      await onSaved();
+    } catch (e: any) {
+      setErr(e.message || "Could not record payment.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      <div className="card-luxe w-full max-w-md p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h4 className="font-display text-lg font-semibold text-cream">Record a payment</h4>
+            <p className="text-xs text-cream/45">{transaction.ref} · {transaction.client_name}</p>
+          </div>
+          <button onClick={onClose} className="text-cream/40 hover:text-cream/70"><X className="h-5 w-5" /></button>
+        </div>
+
+        <div className="mb-4 grid grid-cols-2 gap-3 text-sm">
+          <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
+            <p className="text-[10px] uppercase tracking-wide text-cream/40">Balance due</p>
+            <p className="font-semibold text-cream">{KES(balance)}</p>
+          </div>
+          <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
+            <p className="text-[10px] uppercase tracking-wide text-cream/40">Paid to date</p>
+            <p className="font-semibold text-emerald-400">{KES(transaction.amount_paid || 0)}</p>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <div>
+            <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-cream/45">Amount (KES)</label>
+            <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className={inputCls} placeholder="e.g. 50000" />
+          </div>
+          <div>
+            <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-cream/45">Method</label>
+            <select style={{ colorScheme: "dark" }} value={method} onChange={(e) => setMethod(e.target.value)} className={inputCls}>
+              {PAYMENT_METHODS.map((m) => <option key={m} value={m} style={optionDarkStyle}>{m === "mpesa" ? "M-Pesa" : m}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-cream/45">Note (optional)</label>
+            <input value={note} onChange={(e) => setNote(e.target.value)} className={inputCls} placeholder="e.g. Bank ref, part payment…" />
+          </div>
+        </div>
+
+        {err && <p className="mt-3 text-xs text-red-300">{err}</p>}
+
+        <button onClick={record} disabled={saving} className="btn-gold mt-5 w-full justify-center text-sm">
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Wallet className="h-4 w-4" /> Record payment</>}
+        </button>
       </div>
     </div>
   );

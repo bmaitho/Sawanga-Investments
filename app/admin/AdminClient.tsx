@@ -14,6 +14,11 @@ const KES = (n: number) =>
 
 const optionDarkStyle = { backgroundColor: "#0d1f4a", color: "#f3f0e8" };
 
+// Opens a Gmail compose window in the browser (works regardless of the
+// device's default mail-app setting, unlike mailto: links).
+const gmailComposeUrl = (to: string, subject: string) =>
+  `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}`;
+
 const statusColor: Record<string, string> = {
   new:       "text-gold bg-gold/10 border-gold/20",
   reviewing: "text-sky-400 bg-sky-400/10 border-sky-400/20",
@@ -294,7 +299,7 @@ export default function AdminClient({
                 onRefresh={handleRefresh}
               />
             ) : (
-              <PaymentsTracker transactions={localTransactions} />
+              <PaymentsTracker transactions={localTransactions} adminKey={adminKey} onRefresh={handleRefresh} />
             )}
           </div>
         )}
@@ -424,7 +429,7 @@ export default function AdminClient({
                               <p className="mt-1 text-cream/80">{q.message}</p>
                             </div>
                           )}
-                          <a href={`mailto:${q.email}`} className="inline-block text-xs font-medium text-gold hover:underline">Reply by email →</a>
+                          <a href={gmailComposeUrl(q.email, `Re: your quote request — SAWANGA Investment`)} target="_blank" rel="noopener noreferrer" className="inline-block text-xs font-medium text-gold hover:underline">Reply by email →</a>
                         </div>
                       )}
                     </div>
@@ -482,7 +487,7 @@ export default function AdminClient({
                       {isExpanded && (
                         <div className="border-t border-white/8 bg-white/[0.02] px-5 py-4 space-y-2 text-sm">
                           <p className="text-cream/80">{m.message}</p>
-                          <a href={`mailto:${m.email}`} className="inline-block text-xs font-medium text-gold hover:underline">Reply by email →</a>
+                          <a href={gmailComposeUrl(m.email, `Re: your message — SAWANGA Investment`)} target="_blank" rel="noopener noreferrer" className="inline-block text-xs font-medium text-gold hover:underline">Reply by email →</a>
                         </div>
                       )}
                     </div>

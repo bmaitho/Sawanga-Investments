@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import {
-  Plus, Printer, Trash2, ChevronRight, Loader2, X, CheckCircle2, Wallet,
+  Plus, Printer, Trash2, ChevronRight, ChevronLeft, Loader2, X, CheckCircle2, Wallet,
 } from "lucide-react";
 import {
   KES, ACCOUNT_MANAGERS, PAYMENT_METHODS, computeTotals, agingBucket,
@@ -34,6 +34,7 @@ export default function TransactionsPanel({
   const [subTab, setSubTab] = useState<SubTab>("quotation");
   const [showNew, setShowNew] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [listCollapsed, setListCollapsed] = useState(false);
 
   const selected = transactions.find((t) => t.id === selectedId) || null;
 
@@ -57,56 +58,80 @@ export default function TransactionsPanel({
   }
 
   return (
-    <div className="mt-6 grid gap-6 lg:grid-cols-[320px_1fr] print:block">
+    <div className={`mt-6 grid gap-6 print:block ${listCollapsed ? "lg:grid-cols-[44px_1fr]" : "lg:grid-cols-[320px_1fr]"}`}>
       {/* ── LIST ─────────────────────────────────────────────── */}
-      <div className="card-luxe overflow-hidden print:hidden">
-        <div className="flex items-center justify-between border-b border-white/10 bg-white/[0.03] px-5 py-4">
-          <h3 className="font-display text-sm font-semibold uppercase tracking-wide text-cream/70">
-            Transactions ({transactions.length})
-          </h3>
+      {listCollapsed ? (
+        <div className="card-luxe hidden print:hidden lg:flex lg:flex-col lg:items-center lg:gap-3 lg:py-4">
           <button
-            onClick={() => setShowNew(true)}
-            className="flex items-center gap-1 rounded-lg bg-gold px-3 py-1.5 text-xs font-semibold text-navy-900 transition hover:bg-gold-light"
+            onClick={() => setListCollapsed(false)}
+            title="Expand transaction list"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-cream/60 transition hover:border-gold/40 hover:text-gold"
           >
-            <Plus className="h-3.5 w-3.5" /> New
+            <ChevronRight className="h-4 w-4" />
           </button>
+          <span className="rotate-180 text-[10px] font-medium uppercase tracking-wide text-cream/40 [writing-mode:vertical-rl]">
+            {transactions.length} transactions
+          </span>
         </div>
-        <div className="max-h-[70vh] divide-y divide-white/8 overflow-y-auto">
-          {transactions.length === 0 && (
-            <p className="p-6 text-center text-sm text-cream/45">
-              No transactions yet. Click &quot;New&quot; to create a quotation.
-            </p>
-          )}
-          {transactions.map((t) => {
-            const balance = (t.total || 0) - (t.amount_paid || 0);
-            const bucket = agingBucket(t.quote_date, balance);
-            return (
+      ) : (
+        <div className="card-luxe overflow-hidden print:hidden">
+          <div className="flex items-center justify-between border-b border-white/10 bg-white/[0.03] px-5 py-4">
+            <div className="flex items-center gap-2">
               <button
-                key={t.id}
-                onClick={() => { setSelectedId(t.id!); setSubTab("quotation"); }}
-                className={`block w-full px-5 py-4 text-left transition hover:bg-white/[0.04] ${
-                  selectedId === t.id ? "bg-white/[0.06]" : ""
-                }`}
+                onClick={() => setListCollapsed(true)}
+                title="Collapse to widen the workspace"
+                className="hidden h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-cream/50 transition hover:border-gold/40 hover:text-gold lg:flex"
               >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-mono text-xs text-gold">{t.ref}</span>
-                  <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase ${bucketColor[bucket]}`}>
-                    {bucketLabel[bucket]}
-                  </span>
-                </div>
-                <div className="mt-1 truncate font-medium text-cream">{t.client_name}</div>
-                <div className="truncate text-xs text-cream/45">{t.client_company || "—"}</div>
-                <div className="mt-2 flex items-center justify-between">
-                  <span className="rounded bg-white/5 px-2 py-0.5 text-[10px] font-medium uppercase text-cream/50">
-                    {t.stage}
-                  </span>
-                  <span className="text-sm font-semibold text-cream">{KES(t.total || 0)}</span>
-                </div>
+                <ChevronLeft className="h-3.5 w-3.5" />
               </button>
-            );
-          })}
+              <h3 className="font-display text-sm font-semibold uppercase tracking-wide text-cream/70">
+                Transactions ({transactions.length})
+              </h3>
+            </div>
+            <button
+              onClick={() => setShowNew(true)}
+              className="flex items-center gap-1 rounded-lg bg-gold px-3 py-1.5 text-xs font-semibold text-navy-900 transition hover:bg-gold-light"
+            >
+              <Plus className="h-3.5 w-3.5" /> New
+            </button>
+          </div>
+          <div className="max-h-[70vh] divide-y divide-white/8 overflow-y-auto">
+            {transactions.length === 0 && (
+              <p className="p-6 text-center text-sm text-cream/45">
+                No transactions yet. Click &quot;New&quot; to create a quotation.
+              </p>
+            )}
+            {transactions.map((t) => {
+              const balance = (t.total || 0) - (t.amount_paid || 0);
+              const bucket = agingBucket(t.quote_date, balance);
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => { setSelectedId(t.id!); setSubTab("quotation"); }}
+                  className={`block w-full px-5 py-4 text-left transition hover:bg-white/[0.04] ${
+                    selectedId === t.id ? "bg-white/[0.06]" : ""
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono text-xs text-gold">{t.ref}</span>
+                    <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase ${bucketColor[bucket]}`}>
+                      {bucketLabel[bucket]}
+                    </span>
+                  </div>
+                  <div className="mt-1 truncate font-medium text-cream">{t.client_name}</div>
+                  <div className="truncate text-xs text-cream/45">{t.client_company || "—"}</div>
+                  <div className="mt-2 flex items-center justify-between">
+                    <span className="rounded bg-white/5 px-2 py-0.5 text-[10px] font-medium uppercase text-cream/50">
+                      {t.stage}
+                    </span>
+                    <span className="text-sm font-semibold text-cream">{KES(t.total || 0)}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ── DETAIL ───────────────────────────────────────────── */}
       <div className="card-luxe overflow-hidden">
@@ -350,7 +375,14 @@ function TransactionDetail({
         ))}
       </div>
 
-      <div className="max-h-[64vh] overflow-y-auto p-6 print:max-h-none print:overflow-visible">
+      <p className="border-t border-white/10 bg-white/[0.02] px-6 pt-2 text-[10px] uppercase tracking-wide text-cream/30 print:hidden">
+        Drag the ⌟ handle in the bottom-right corner below to expand this area
+      </p>
+      <div
+        className="resize-y overflow-y-auto p-6 print:max-h-none print:overflow-visible print:resize-none"
+        style={{ resize: "vertical", minHeight: "300px", maxHeight: "85vh", height: "64vh" }}
+        title="Drag the bottom-right corner to resize this area"
+      >
         {subTab === "quotation" && (
           <DocumentForm
             draft={draft} setField={setField} items={items} setItem={setItem}
@@ -677,22 +709,43 @@ function ItemPicker({ item, onChange }: { item: TransactionItem; onChange: (patc
 
   return (
     <div className="space-y-2">
-      <div className="grid grid-cols-2 gap-2">
-        <select style={{ colorScheme: "dark" }} className={inputCls} value={category} onChange={(e) => onCategoryChange(e.target.value)}>
-          {CATALOG_CATEGORIES.map((c: string) => <option key={c} value={c} style={optionDarkStyle}>{c}</option>)}
-        </select>
-        <select style={{ colorScheme: "dark" }} className={inputCls} value={productId} onChange={(e) => onProductChange(e.target.value)}>
-          {productsInCategory.map((p: any) => <option key={p.id} value={p.id} style={optionDarkStyle}>{p.name}</option>)}
-        </select>
-        <select style={{ colorScheme: "dark" }} className={inputCls} value={brand} onChange={(e) => onBrandChange(e.target.value)}>
-          {product?.brands.map((b: string) => <option key={b} value={b} style={optionDarkStyle}>{b}</option>)}
-        </select>
-        <select style={{ colorScheme: "dark" }} className={inputCls} value={unit?.label || ""} onChange={(e) => onUnitChange(e.target.value)}>
-          {unitsForBrand.map((u: any) => (
-            <option key={u.label} value={u.label} style={optionDarkStyle}>{u.label} — {KES(u.prices[brand])}</option>
-          ))}
-        </select>
+      <div className="grid grid-cols-1 gap-2">
+        <div>
+          <label className={labelCls}>Category</label>
+          <select style={{ colorScheme: "dark" }} className={inputCls} value={category} onChange={(e) => onCategoryChange(e.target.value)}>
+            {CATALOG_CATEGORIES.map((c: string) => <option key={c} value={c} style={optionDarkStyle}>{c}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className={labelCls}>Product</label>
+          <select style={{ colorScheme: "dark" }} className={inputCls} value={productId} onChange={(e) => onProductChange(e.target.value)}>
+            {productsInCategory.map((p: any) => <option key={p.id} value={p.id} style={optionDarkStyle}>{p.name}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className={labelCls}>Brand</label>
+          <select style={{ colorScheme: "dark" }} className={inputCls} value={brand} onChange={(e) => onBrandChange(e.target.value)}>
+            {product?.brands.map((b: string) => <option key={b} value={b} style={optionDarkStyle}>{b}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className={labelCls}>Measurement</label>
+          <select style={{ colorScheme: "dark" }} className={inputCls} value={unit?.label || ""} onChange={(e) => onUnitChange(e.target.value)}>
+            {unitsForBrand.map((u: any) => (
+              <option key={u.label} value={u.label} style={optionDarkStyle}>{u.label} — {KES(u.prices[brand])}</option>
+            ))}
+          </select>
+        </div>
       </div>
+      {unit && item.unit_price !== unit.prices[brand] && (
+        <button
+          type="button"
+          onClick={() => applySelection(product, brand, unit)}
+          className="text-xs font-medium text-gold hover:underline"
+        >
+          Price shown ({KES(item.unit_price)}) doesn't match the catalogue ({KES(unit.prices[brand])}) — click to sync
+        </button>
+      )}
       <button type="button" onClick={() => setMode("custom")} className="text-xs font-medium text-cream/40 hover:text-cream/70">
         Not in catalogue? Type a custom item
       </button>
