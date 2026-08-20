@@ -67,6 +67,20 @@ function parseOrderDetail(raw: string): ParsedOrderDetail {
   return { location, items };
 }
 
+// Quote requests store each product as its own array entry (from
+// QuoteProductPicker) in the same "Name (Brand, Unit) xQty (KES total)"
+// format — parse each, falling back to the raw string for older
+// plain-category submissions (e.g. "Paints & Coatings") that predate the
+// order builder.
+function parseProductLines(products: string[]): ParsedOrderItem[] {
+  return (products || []).map((raw) => {
+    const m = raw.trim().match(ITEM_RE);
+    if (!m) return { raw: raw.trim() } as ParsedOrderItem;
+    const [, name, brand, unit, qty, total, note] = m;
+    return { name, brand, unit, qty, total, note: note || undefined };
+  });
+}
+
 type Tab = "referrals" | "painters" | "redemptions";
 type Section = "transactions" | "painter-portal" | "leads";
 type TxnView = "list" | "tracker";
@@ -366,7 +380,42 @@ export default function AdminClient({
                           {q.company && <p><span className="text-cream/40">Company:</span> <span className="text-cream/80">{q.company}</span></p>}
                           {q.project_type && <p><span className="text-cream/40">Project type:</span> <span className="text-cream/80">{q.project_type}</span></p>}
                           {q.location && <p><span className="text-cream/40">Location:</span> <span className="text-cream/80">{q.location}</span></p>}
-                          {q.products?.length > 0 && <p><span className="text-cream/40">Products:</span> <span className="text-cream/80">{q.products.join(", ")}</span></p>}
+                          {q.products?.length > 0 && (() => {
+                            const parsedItems = parseProductLines(q.products);
+                            const total = parsedItems.reduce((sum: number, it: ParsedOrderItem) => {
+                              const n = Number(String(it.total || "").replace(/[^\d.]/g, ""));
+                              return sum + (Number.isFinite(n) ? n : 0);
+                            }, 0);
+                            return (
+                              <div>
+                                <div className="flex items-center justify-between">
+                                  <p className="text-cream/40">Products requested:</p>
+                                  {total > 0 && <p className="text-xs font-medium text-gold">Est. total: {KES(total)}</p>}
+                                </div>
+                                <div className="mt-2 overflow-hidden rounded-xl border border-white/10">
+                                  {parsedItems.map((it, idx) => (
+                                    <div key={idx} className={`px-4 py-2.5 ${idx > 0 ? "border-t border-white/8" : ""}`}>
+                                      {it.raw ? (
+                                        <p className="text-sm text-cream/70">{it.raw}</p>
+                                      ) : (
+                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                          <div>
+                                            <span className="text-sm font-medium text-cream">{it.name}</span>
+                                            <span className="ml-2 text-xs text-cream/45">{it.brand} · {it.unit}</span>
+                                          </div>
+                                          <div className="text-right">
+                                            <span className="text-sm text-cream/60">x{it.qty}</span>
+                                            <span className="ml-3 text-sm font-semibold text-cream">{it.total}</span>
+                                          </div>
+                                        </div>
+                                      )}
+                                      {it.note && <p className="mt-1 text-xs italic text-gold/70">Note: {it.note}</p>}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })()}
                           {q.budget_range && <p><span className="text-cream/40">Budget:</span> <span className="text-cream/80">{q.budget_range}</span></p>}
                           {q.referral_code && <p><span className="text-cream/40">Referral code:</span> <span className="text-cream/80">{q.referral_code}</span></p>}
                           {q.message && (
