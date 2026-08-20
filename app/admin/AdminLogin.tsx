@@ -63,7 +63,7 @@ export default function AdminLogin() {
                 onClick={() => setShowPassword((v) => !v)}
                 tabIndex={-1}
                 aria-label={showPassword ? "Hide password" : "Show password"}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-cream/40 transition hover:text-cream/70"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-navy-900/50 transition hover:text-navy-900/80"
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
