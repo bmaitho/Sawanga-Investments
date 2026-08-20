@@ -1,10 +1,11 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, Loader2 } from "lucide-react";
+import { Lock, Loader2, Eye, EyeOff } from "lucide-react";
 
 export default function AdminLogin() {
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -48,14 +49,25 @@ export default function AdminLogin() {
           </p>
 
           <form onSubmit={handleLogin} className="mt-8 space-y-4">
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-cream placeholder-cream/30 outline-none transition focus:border-gold/50"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 pr-11 text-cream placeholder-cream/30 outline-none transition focus:border-gold/50"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                tabIndex={-1}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-cream/40 transition hover:text-cream/70"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
             {error && (
               <p className="rounded-lg bg-red-500/10 px-4 py-2 text-center text-sm text-red-300">
                 {error}
